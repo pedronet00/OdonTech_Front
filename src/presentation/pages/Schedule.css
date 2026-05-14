@@ -1,0 +1,219 @@
+.calendar-container {
+  display: flex;
+  height: calc(100vh - 120px);
+  gap: 24px;
+}
+
+.calendar-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.calendar-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: 1fr;
+}
+
+.calendar-day-header {
+  text-align: center;
+  padding: 12px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-subtle);
+  text-transform: uppercase;
+}
+
+.calendar-cell {
+  border-right: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 8px;
+  transition: background var(--transition-fast);
+  cursor: pointer;
+  position: relative;
+  min-height: 80px;
+}
+
+.calendar-cell:hover {
+  background: var(--bg-surface-hover);
+}
+
+.calendar-cell.inactive {
+  background: var(--bg-main);
+  color: var(--text-muted);
+}
+
+.calendar-cell.selected {
+  background: #f0f9ff;
+  border: 1px solid var(--primary);
+  z-index: 1;
+}
+
+.calendar-date {
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.calendar-event-indicator {
+  font-size: 0.75rem;
+  background: var(--primary);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.day-panel {
+  width: 320px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.day-panel-header {
+  padding: 20px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-main);
+}
+
+.day-timeline {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.time-slot {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  gap: 12px;
+}
+
+.time-label {
+  width: 50px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  padding-top: 8px;
+}
+
+.time-content {
+  flex: 1;
+  min-height: 48px;
+  border: 1px dashed var(--border-light);
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+}
+
+.time-content.free:hover {
+  background: #f0f9ff;
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.time-content.occupied {
+  cursor: pointer;
+}
+
+/* Status Card Stylings */
+.status-card-agendado {
+  background: #fffbeb !important;
+  border: 1px solid #fcd34d !important;
+}
+
+.status-card-confirmado {
+  background: #f0fdf4 !important;
+  border: 1px solid #86efac !important;
+}
+
+.status-card-cancelado {
+  background: #fef2f2 !important;
+  border: 1px solid #fecaca !important;
+}
+
+.status-card-falta {
+  background: #fff7ed !important;
+  border: 1px solid #fdba74 !important;
+}
+
+/* Status Indicator (Inside Cards) */
+.status-badge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.status-badge.agendado { background: #fef3c7; color: #92400e; }
+.status-badge.confirmado { background: #dcfce7; color: #166534; }
+.status-badge.cancelado { background: #fee2e2; color: #991b1b; }
+.status-badge.falta { background: #ffedd5; color: #9a3412; }
+
+/* Status Indicators in Monthly Calendar */
+.calendar-event-indicator.status-agendado { background: #f59e0b; }
+.calendar-event-indicator.status-confirmado { background: #10b981; }
+.calendar-event-indicator.status-cancelado { background: #ef4444; }
+.calendar-event-indicator.status-falta { background: #f97316; }
+
+/* Status Text Labels in Details */
+.status-text { font-weight: 700; }
+.status-text.agendado { color: #d97706; }
+.status-text.confirmado { color: #059669; }
+.status-text.cancelado { color: #dc2626; }
+.status-text.falta { color: #ea580c; }
+
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  backdrop-filter: blur(2px);
+}
+
+.modal-content {
+  background: var(--bg-surface);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 450px;
+  padding: 24px;
+  box-shadow: var(--shadow-lg);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}

@@ -1,0 +1,5 @@
+﻿src/presentation/components/Layout.tsx(1,1): error TS6133: 'React' is declared but its value is never read.
+src/presentation/components/Layout.tsx(6,3): error TS6133: 'FileText' is declared but its value is never read.
+src/presentation/pages/Dashboard.tsx(2,1): error TS6133: 'React' is declared but its value is never read.
+src/presentation/pages/Finance.tsx(1,1): error TS6133: 'React' is declared but its value is never read.
+src/presentation/pages/Records.tsx(38,17): error TS6133: 'patientName' is declared but its value is never read.
