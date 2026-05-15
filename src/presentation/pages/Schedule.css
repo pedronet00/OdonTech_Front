@@ -217,3 +217,20 @@
   align-items: center;
   margin-bottom: 24px;
 }
+
+@media (max-width: 768px) {
+  .calendar-container {
+    flex-direction: column;
+    height: auto;
+  }
+  
+  .day-panel {
+    width: 100%;
+    margin-top: 16px;
+    height: 400px; /* Fixed height for scrolling events inside it on mobile */
+  }
+
+  .calendar-cell {
+    min-height: 60px;
+  }
+}

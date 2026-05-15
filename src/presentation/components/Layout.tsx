@@ -4,14 +4,18 @@ import {
   CalendarDays,
   DollarSign,
   LogOut,
-  Stethoscope
+  Stethoscope,
+  Menu,
+  X
 } from 'lucide-react';
+import { useState } from 'react';
 import { useAuth } from '../../application/contexts/AuthContext';
 import './Layout.css';
 
 export function Layout() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -20,7 +24,18 @@ export function Layout() {
 
   return (
     <div className="layout-container animate-fade-in">
-      <aside className="sidebar">
+      <div className="mobile-header">
+        <img src="/logo.png" alt="OdonTech Logo" className="mobile-logo" />
+        <button className="mobile-menu-btn" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+          {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+      </div>
+      
+      {isMobileMenuOpen && (
+        <div className="mobile-overlay" onClick={() => setIsMobileMenuOpen(false)}></div>
+      )}
+
+      <aside className={`sidebar ${isMobileMenuOpen ? 'open' : ''}`}>
         <div className="sidebar-header" style={{ justifyContent: 'center', padding: '16px 20px 8px 20px' }}>
           <img
             src="/logo.png"
@@ -33,6 +48,7 @@ export function Layout() {
           <NavLink
             to="/agenda"
             className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            onClick={() => setIsMobileMenuOpen(false)}
           >
             <CalendarDays className="nav-icon" />
             <span>Agenda</span>
@@ -41,6 +57,7 @@ export function Layout() {
           <NavLink
             to="/financeiro"
             className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            onClick={() => setIsMobileMenuOpen(false)}
           >
             <DollarSign className="nav-icon" />
             <span>Financeiro</span>
@@ -49,6 +66,7 @@ export function Layout() {
           <NavLink
             to="/pacientes"
             className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            onClick={() => setIsMobileMenuOpen(false)}
             end
           >
             <Users className="nav-icon" />
@@ -58,6 +76,7 @@ export function Layout() {
           <NavLink
             to="/profissionais"
             className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            onClick={() => setIsMobileMenuOpen(false)}
           >
             <Stethoscope className="nav-icon" />
             <span>Profissionais</span>

@@ -670,6 +670,7 @@ select {
   word-break: break-all;
   display: -webkit-box;
   -webkit-line-clamp: 1;
+  line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -688,4 +689,55 @@ select {
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid var(--border-subtle);
+}
+
+@media (max-width: 768px) {
+  .grid-cols-2, .grid-cols-3, .grid-cols-4, .anamnese-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .glass-panel {
+    overflow-x: auto;
+  }
+  
+  .data-table {
+    min-width: 600px; /* Forces horizontal scroll on mobile */
+  }
+
+  /* Make forms stack */
+  .flex-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  /* Keep generic flex row for some exceptions, you can add .flex-row-mobile if needed */
+  .flex-row.justify-between {
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  /* Reset full flex buttons on mobile modal footers */
+  .modal-footer {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .modal-footer button {
+    width: 100%;
+  }
+
+  .modal-content {
+    width: 95vw;
+    min-width: unset;
+    padding: 16px;
+    max-height: 95vh;
+  }
+
+  .modal-body {
+    padding: 16px;
+  }
+
+  h1 {
+    font-size: 1.5rem !important;
+  }
 }
