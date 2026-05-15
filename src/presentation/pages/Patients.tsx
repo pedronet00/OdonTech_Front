@@ -6,6 +6,7 @@ import { API_BASE_URL } from '../../infrastructure/config/api';
 import type { Patient, FichaAnamnese, Pagamento, NovoPagamento } from '../../domain/models/types';
 import { FormaPagamentoEnum, StatusPagamentoEnum } from '../../domain/models/types';
 import toast from 'react-hot-toast';
+import { applyCpfMask, applyPhoneMask } from '../../utils/masks';
 
 export function Patients() {
   const { user, token } = useAuth();
@@ -107,7 +108,7 @@ export function Patients() {
         },
         body: JSON.stringify({
           ...editingPatient,
-          sexo: editingPatient.sexo === 'Masculino' ? 1 : 0
+          sexo: editingPatient.sexo === 'Masculino' ? 0 : 1
         })
       });
 
@@ -146,7 +147,7 @@ export function Patients() {
       const payload = {
         ...newPatient,
         clinicaId: user.clinica_id,
-        sexo: newPatient.sexo === 'Masculino' ? 1 : 0
+        sexo: newPatient.sexo === 'Masculino' ? 0 : 1
       };
 
       const response = await fetch(`${API_BASE_URL}/pacientes`, {
@@ -524,6 +525,7 @@ export function Patients() {
                       type="text"
                       className="input-field"
                       placeholder="Ex: Pedro Neto"
+                      maxLength={100}
                       value={newPatient.nome}
                       onChange={e => setNewPatient({ ...newPatient, nome: e.target.value })}
                       required
@@ -537,6 +539,7 @@ export function Patients() {
                         type="email"
                         className="input-field"
                         placeholder="email@exemplo.com"
+                        maxLength={100}
                         value={newPatient.email || ''}
                         onChange={e => setNewPatient({ ...newPatient, email: e.target.value })}
                       />
@@ -547,8 +550,9 @@ export function Patients() {
                         type="text"
                         className="input-field"
                         placeholder="(00) 00000-0000"
+                        maxLength={15}
                         value={newPatient.telefone}
-                        onChange={e => setNewPatient({ ...newPatient, telefone: e.target.value })}
+                        onChange={e => setNewPatient({ ...newPatient, telefone: applyPhoneMask(e.target.value) })}
                         required
                       />
                     </div>
@@ -561,8 +565,9 @@ export function Patients() {
                         type="text"
                         className="input-field"
                         placeholder="000.000.000-00"
+                        maxLength={14}
                         value={newPatient.cpf}
-                        onChange={e => setNewPatient({ ...newPatient, cpf: e.target.value })}
+                        onChange={e => setNewPatient({ ...newPatient, cpf: applyCpfMask(e.target.value) })}
                         required
                       />
                     </div>
@@ -636,6 +641,7 @@ export function Patients() {
                     <input
                       type="text"
                       className="input-field"
+                      maxLength={100}
                       value={editingPatient.nome}
                       onChange={e => setEditingPatient({ ...editingPatient, nome: e.target.value })}
                       required
@@ -648,6 +654,7 @@ export function Patients() {
                       <input
                         type="email"
                         className="input-field"
+                        maxLength={100}
                         value={editingPatient.email}
                         onChange={e => setEditingPatient({ ...editingPatient, email: e.target.value })}
                       />
@@ -657,8 +664,9 @@ export function Patients() {
                       <input
                         type="text"
                         className="input-field"
+                        maxLength={15}
                         value={editingPatient.telefone}
-                        onChange={e => setEditingPatient({ ...editingPatient, telefone: e.target.value })}
+                        onChange={e => setEditingPatient({ ...editingPatient, telefone: applyPhoneMask(e.target.value) })}
                         required
                       />
                     </div>
@@ -670,8 +678,9 @@ export function Patients() {
                       <input
                         type="text"
                         className="input-field"
+                        maxLength={14}
                         value={editingPatient.cpf}
-                        onChange={e => setEditingPatient({ ...editingPatient, cpf: e.target.value })}
+                        onChange={e => setEditingPatient({ ...editingPatient, cpf: applyCpfMask(e.target.value) })}
                         required
                       />
                     </div>
@@ -692,7 +701,7 @@ export function Patients() {
                       <label className="input-label">Sexo</label>
                       <select
                         className="input-field"
-                        value={editingPatient.sexo}
+                        value={String(editingPatient.sexo) === '0' || editingPatient.sexo === 'Masculino' ? 'Masculino' : 'Feminino'}
                         onChange={e => setEditingPatient({ ...editingPatient, sexo: e.target.value })}
                       >
                         <option value="Masculino">Masculino</option>

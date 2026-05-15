@@ -181,7 +181,17 @@ export interface NovoAgendamento {
 export interface Profissional {
   id: string;
   nome: string;
-  especialidade: string;
+  email: string;
+  cro: string;
+  clinicaId: string;
+}
+
+export interface ProfissionalRequest {
+  nome: string;
+  email: string;
+  senha?: string;
+  cro: string;
+  clinicaId: string;
 }
 
 export interface FinanceTransaction {

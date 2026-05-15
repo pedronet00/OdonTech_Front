@@ -3,7 +3,8 @@ import {
   Users,
   CalendarDays,
   DollarSign,
-  LogOut
+  LogOut,
+  Stethoscope
 } from 'lucide-react';
 import { useAuth } from '../../application/contexts/AuthContext';
 import './Layout.css';
@@ -52,6 +53,14 @@ export function Layout() {
           >
             <Users className="nav-icon" />
             <span>Pacientes</span>
+          </NavLink>
+
+          <NavLink
+            to="/profissionais"
+            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+          >
+            <Stethoscope className="nav-icon" />
+            <span>Profissionais</span>
           </NavLink>
           <button
             className="nav-item w-full"

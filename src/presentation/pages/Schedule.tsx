@@ -54,7 +54,7 @@ export function Schedule() {
         setProfessionals(await profRes.json());
       } else {
         setProfessionals([
-          { id: '08deae4d-edca-4250-8e1f-0d51dd5b2fc2', nome: 'pedro', especialidade: 'Dentista' }
+          { id: '08deae4d-edca-4250-8e1f-0d51dd5b2fc2', nome: 'pedro', email: '', cro: '', clinicaId: user.clinica_id }
         ]);
       }
     } catch (err) {
@@ -449,7 +449,7 @@ export function Schedule() {
                 </div>
                 <div className="form-group">
                   <label className="input-label">Observação</label>
-                  <input type="text" className="input-field" value={observacao} onChange={e => setObservacao(e.target.value)} placeholder="Ex: Avaliação" />
+                  <input type="text" className="input-field" value={observacao} onChange={e => setObservacao(e.target.value)} placeholder="Ex: Avaliação" maxLength={500} />
                 </div>
               </div>
 

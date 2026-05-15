@@ -6,6 +6,7 @@ import { Patients } from './presentation/pages/Patients';
 import { Schedule } from './presentation/pages/Schedule';
 import { Records } from './presentation/pages/Records';
 import { Finance } from './presentation/pages/Finance';
+import { Professionals } from './presentation/pages/Professionals';
 import { AuthProvider, useAuth } from './application/contexts/AuthContext';
 import { Toaster } from 'react-hot-toast';
 
@@ -28,6 +29,7 @@ function App() {
             <Route path="prontuarios/:id" element={<Records />} />
             <Route path="agenda" element={<Schedule />} />
             <Route path="financeiro" element={<Finance />} />
+            <Route path="profissionais" element={<Professionals />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

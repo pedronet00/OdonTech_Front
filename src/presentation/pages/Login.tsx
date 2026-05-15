@@ -75,7 +75,8 @@ export function Login() {
               <input
                 type="email"
                 className="input-field"
-                placeholder="dr@odontech.com"
+                placeholder="seu@email.com"
+                maxLength={100}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -90,7 +91,8 @@ export function Login() {
               <input
                 type="password"
                 className="input-field"
-                placeholder="••••••••"
+                placeholder="Sua senha secreta"
+                maxLength={255}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
