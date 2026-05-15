@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 export function Records() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
 
   const [atendimentos, setAtendimentos] = useState<Atendimento[]>([]);
   const [patient, setPatient] = useState<Patient | null>(null);
@@ -17,6 +17,7 @@ export function Records() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [editingAtendimento, setEditingAtendimento] = useState<Atendimento | null>(null);
+  const [printingAtendimento, setPrintingAtendimento] = useState<Atendimento | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   
   // File management state
@@ -251,6 +252,13 @@ export function Records() {
     }
   };
 
+  const handlePrint = (atendimento: Atendimento) => {
+    setPrintingAtendimento(atendimento);
+    setTimeout(() => {
+      window.print();
+    }, 200);
+  };
+
   return (
     <div className="animate-fade-in" onClick={() => activeDropdown && setActiveDropdown(null)}>
       <button
@@ -328,7 +336,13 @@ export function Records() {
                       </div>
                     </div>
                     <div className="flex-row items-center gap-3">
-                      <button className="btn btn-secondary" style={{ fontSize: '0.8rem' }}>Imprimir Registro</button>
+                      <button 
+                        className="btn btn-secondary" 
+                        style={{ fontSize: '0.8rem' }}
+                        onClick={() => handlePrint(atendimento)}
+                      >
+                        <FileText size={14} /> Imprimir Registro
+                      </button>
   
                       <div className="dropdown-container">
                         <button 
@@ -543,6 +557,94 @@ export function Records() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Estrutura de Impressão (Invisível no navegador, visível no Print) */}
+      {printingAtendimento && (
+        <div className="printable-record" id="printable-content">
+          <div className="print-header">
+            <div className="print-clinic-info">
+              <h2>{user?.clinica_nome || 'Clínica Odontológica'}</h2>
+              <p>Prontuário Digital do Paciente</p>
+            </div>
+            <div className="print-meta">
+              <p>Relatório de Atendimento</p>
+              <p>Gerado em: {new Date().toLocaleString('pt-BR')}</p>
+            </div>
+          </div>
+
+          <div className="print-section">
+            <div className="print-section-title">Dados do Paciente</div>
+            <div className="print-grid">
+              <div className="print-field">
+                <span className="print-label">Nome Completo</span>
+                <span className="print-value">{printingAtendimento.nomePaciente}</span>
+              </div>
+              <div className="print-field">
+                <span className="print-label">CPF</span>
+                <span className="print-value">{patient?.cpf || 'Não informado'}</span>
+              </div>
+              <div className="print-field">
+                <span className="print-label">Data de Nascimento</span>
+                <span className="print-value">
+                  {patient?.dataNascimento ? new Date(patient.dataNascimento).toLocaleDateString('pt-BR') : 'Não informada'}
+                </span>
+              </div>
+              <div className="print-field">
+                <span className="print-label">ID do Atendimento</span>
+                <span className="print-value">{printingAtendimento.id.toUpperCase()}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="print-section">
+            <div className="print-section-title">Detalhes do Atendimento</div>
+            <div className="print-grid">
+              <div className="print-field">
+                <span className="print-label">Data do Atendimento</span>
+                <span className="print-value">{new Date(printingAtendimento.dataAtendimento).toLocaleDateString('pt-BR')}</span>
+              </div>
+              <div className="print-field">
+                <span className="print-label">Tipo</span>
+                <span className="print-value">{printingAtendimento.tipoAtendimento}</span>
+              </div>
+              <div className="print-field">
+                <span className="print-label">Profissional Responsável</span>
+                <span className="print-value">{printingAtendimento.nomeProfissional}</span>
+              </div>
+              {printingAtendimento.dente && (
+                <div className="print-field">
+                  <span className="print-label">Dente</span>
+                  <span className="print-value">{printingAtendimento.dente}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="print-section">
+            <div className="print-section-title">Evolução Clínica / Descrição</div>
+            <div className="print-description">
+              {printingAtendimento.descricao}
+            </div>
+          </div>
+
+          <div className="print-signatures">
+            <div className="signature-box">
+              <div className="signature-line"></div>
+              <div className="signature-label">{printingAtendimento.nomePaciente}</div>
+              <div className="signature-sub">Assinatura do Paciente (ou Responsável)</div>
+            </div>
+            <div className="signature-box">
+              <div className="signature-line"></div>
+              <div className="signature-label">{printingAtendimento.nomeProfissional}</div>
+              <div className="signature-sub">Assinatura do Profissional</div>
+            </div>
+          </div>
+
+          <div className="print-footer">
+            <p>OdonTech - Sistema de Gestão Odontológica | Documento restrito para fins clínicos.</p>
           </div>
         </div>
       )}
