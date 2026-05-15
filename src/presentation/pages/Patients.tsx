@@ -191,7 +191,7 @@ export function Patients() {
       const response = await fetch(`${API_BASE_URL}/fichas-anamnese/paciente/${pacienteId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      
+
       if (response.status === 404) {
         // Prepare empty ficha if not found
         setFichaAnamnese({
@@ -202,7 +202,7 @@ export function Patients() {
       }
 
       if (!response.ok) throw new Error('Falha ao carregar ficha de anamnese');
-      
+
       const data = await response.json();
       setFichaAnamnese(data);
     } catch (err) {
@@ -217,8 +217,8 @@ export function Patients() {
     try {
       setIsSaving(true);
       // Map PA string to Number if needed (Alta=1, Normal=2, Baixa=3 based on context search)
-      const paMapping: {[key: string]: number} = { 'Alta': 1, 'Normal': 2, 'Baixa': 3 };
-      
+      const paMapping: { [key: string]: number } = { 'Alta': 1, 'Normal': 2, 'Baixa': 3 };
+
       const payload = {
         ...fichaAnamnese,
         tipoPA: typeof fichaAnamnese.tipoPA === 'string' ? (paMapping[fichaAnamnese.tipoPA] || 2) : fichaAnamnese.tipoPA
@@ -462,7 +462,7 @@ export function Patients() {
                         >
                           <FileText size={16} />Prontuário
                         </button>
-                        <button 
+                        <button
                           className="dropdown-item"
                           onClick={() => fetchAnamnese(patient.id)}
                         >
@@ -524,7 +524,7 @@ export function Patients() {
                     <input
                       type="text"
                       className="input-field"
-                      placeholder="Ex: Pedro Neto"
+                      placeholder="Ex: João da Silva Filho"
                       maxLength={100}
                       value={newPatient.nome}
                       onChange={e => setNewPatient({ ...newPatient, nome: e.target.value })}
@@ -753,7 +753,7 @@ export function Patients() {
                 <X size={24} />
               </button>
             </div>
-            
+
             <form onSubmit={handleSaveAnamnese}>
               <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
                 <div className="anamnese-grid">
@@ -762,12 +762,12 @@ export function Patients() {
                     <div className="anamnese-controls">
                       <span className="anamnese-label">Está tomando algum medicamento?</span>
                       <div className="toggle-group">
-                        <button type="button" className={`toggle-btn ${fichaAnamnese.tomandoAlgumMedicamento ? 'active yes' : ''}`} onClick={() => setFichaAnamnese({...fichaAnamnese, tomandoAlgumMedicamento: true})}>Sim</button>
-                        <button type="button" className={`toggle-btn ${!fichaAnamnese.tomandoAlgumMedicamento ? 'active no' : ''}`} onClick={() => setFichaAnamnese({...fichaAnamnese, tomandoAlgumMedicamento: false})}>Não</button>
+                        <button type="button" className={`toggle-btn ${fichaAnamnese.tomandoAlgumMedicamento ? 'active yes' : ''}`} onClick={() => setFichaAnamnese({ ...fichaAnamnese, tomandoAlgumMedicamento: true })}>Sim</button>
+                        <button type="button" className={`toggle-btn ${!fichaAnamnese.tomandoAlgumMedicamento ? 'active no' : ''}`} onClick={() => setFichaAnamnese({ ...fichaAnamnese, tomandoAlgumMedicamento: false })}>Não</button>
                       </div>
                     </div>
                     {fichaAnamnese.tomandoAlgumMedicamento && (
-                      <input type="text" className="input-field anamnese-details-input" placeholder="Quais medicamentos?" value={fichaAnamnese.quaisMedicamentos || ''} onChange={e => setFichaAnamnese({...fichaAnamnese, quaisMedicamentos: e.target.value})} required />
+                      <input type="text" className="input-field anamnese-details-input" placeholder="Quais medicamentos?" value={fichaAnamnese.quaisMedicamentos || ''} onChange={e => setFichaAnamnese({ ...fichaAnamnese, quaisMedicamentos: e.target.value })} required />
                     )}
                   </div>
 
@@ -776,12 +776,12 @@ export function Patients() {
                     <div className="anamnese-controls">
                       <span className="anamnese-label">Possui alguma alergia?</span>
                       <div className="toggle-group">
-                        <button type="button" className={`toggle-btn ${fichaAnamnese.possuiAlergias ? 'active yes' : ''}`} onClick={() => setFichaAnamnese({...fichaAnamnese, possuiAlergias: true})}>Sim</button>
-                        <button type="button" className={`toggle-btn ${!fichaAnamnese.possuiAlergias ? 'active no' : ''}`} onClick={() => setFichaAnamnese({...fichaAnamnese, possuiAlergias: false})}>Não</button>
+                        <button type="button" className={`toggle-btn ${fichaAnamnese.possuiAlergias ? 'active yes' : ''}`} onClick={() => setFichaAnamnese({ ...fichaAnamnese, possuiAlergias: true })}>Sim</button>
+                        <button type="button" className={`toggle-btn ${!fichaAnamnese.possuiAlergias ? 'active no' : ''}`} onClick={() => setFichaAnamnese({ ...fichaAnamnese, possuiAlergias: false })}>Não</button>
                       </div>
                     </div>
                     {fichaAnamnese.possuiAlergias && (
-                      <input type="text" className="input-field anamnese-details-input" placeholder="Quais alergias?" value={fichaAnamnese.quaisAlergias || ''} onChange={e => setFichaAnamnese({...fichaAnamnese, quaisAlergias: e.target.value})} required />
+                      <input type="text" className="input-field anamnese-details-input" placeholder="Quais alergias?" value={fichaAnamnese.quaisAlergias || ''} onChange={e => setFichaAnamnese({ ...fichaAnamnese, quaisAlergias: e.target.value })} required />
                     )}
                   </div>
 
@@ -789,7 +789,7 @@ export function Patients() {
                   <div className="anamnese-question-row">
                     <div className="anamnese-controls">
                       <span className="anamnese-label">Pressão Arterial</span>
-                      <select className="input-field" style={{ width: '150px' }} value={fichaAnamnese.tipoPA} onChange={e => setFichaAnamnese({...fichaAnamnese, tipoPA: e.target.value})}>
+                      <select className="input-field" style={{ width: '150px' }} value={fichaAnamnese.tipoPA} onChange={e => setFichaAnamnese({ ...fichaAnamnese, tipoPA: e.target.value })}>
                         <option value="Normal">Normal</option>
                         <option value="Alta">Alta</option>
                         <option value="Baixa">Baixa</option>
@@ -802,12 +802,12 @@ export function Patients() {
                     <div className="anamnese-controls">
                       <span className="anamnese-label">Problema cardíaco?</span>
                       <div className="toggle-group">
-                        <button type="button" className={`toggle-btn ${fichaAnamnese.temProblemaCardiaco ? 'active yes' : ''}`} onClick={() => setFichaAnamnese({...fichaAnamnese, temProblemaCardiaco: true})}>Sim</button>
-                        <button type="button" className={`toggle-btn ${!fichaAnamnese.temProblemaCardiaco ? 'active no' : ''}`} onClick={() => setFichaAnamnese({...fichaAnamnese, temProblemaCardiaco: false})}>Não</button>
+                        <button type="button" className={`toggle-btn ${fichaAnamnese.temProblemaCardiaco ? 'active yes' : ''}`} onClick={() => setFichaAnamnese({ ...fichaAnamnese, temProblemaCardiaco: true })}>Sim</button>
+                        <button type="button" className={`toggle-btn ${!fichaAnamnese.temProblemaCardiaco ? 'active no' : ''}`} onClick={() => setFichaAnamnese({ ...fichaAnamnese, temProblemaCardiaco: false })}>Não</button>
                       </div>
                     </div>
                     {fichaAnamnese.temProblemaCardiaco && (
-                      <input type="text" className="input-field anamnese-details-input" placeholder="Qual problema?" value={fichaAnamnese.qualProblemaCardiaco || ''} onChange={e => setFichaAnamnese({...fichaAnamnese, qualProblemaCardiaco: e.target.value})} required />
+                      <input type="text" className="input-field anamnese-details-input" placeholder="Qual problema?" value={fichaAnamnese.qualProblemaCardiaco || ''} onChange={e => setFichaAnamnese({ ...fichaAnamnese, qualProblemaCardiaco: e.target.value })} required />
                     )}
                   </div>
 
@@ -816,8 +816,8 @@ export function Patients() {
                     <div className="anamnese-controls">
                       <span className="anamnese-label">É diabético?</span>
                       <div className="toggle-group">
-                        <button type="button" className={`toggle-btn ${fichaAnamnese.temDiabetes ? 'active yes' : ''}`} onClick={() => setFichaAnamnese({...fichaAnamnese, temDiabetes: true})}>Sim</button>
-                        <button type="button" className={`toggle-btn ${!fichaAnamnese.temDiabetes ? 'active no' : ''}`} onClick={() => setFichaAnamnese({...fichaAnamnese, temDiabetes: false})}>Não</button>
+                        <button type="button" className={`toggle-btn ${fichaAnamnese.temDiabetes ? 'active yes' : ''}`} onClick={() => setFichaAnamnese({ ...fichaAnamnese, temDiabetes: true })}>Sim</button>
+                        <button type="button" className={`toggle-btn ${!fichaAnamnese.temDiabetes ? 'active no' : ''}`} onClick={() => setFichaAnamnese({ ...fichaAnamnese, temDiabetes: false })}>Não</button>
                       </div>
                     </div>
                   </div>
@@ -826,8 +826,8 @@ export function Patients() {
                     <div className="anamnese-controls">
                       <span className="anamnese-label">Sangramento excessivo?</span>
                       <div className="toggle-group">
-                        <button type="button" className={`toggle-btn ${fichaAnamnese.tipoSangramento ? 'active yes' : ''}`} onClick={() => setFichaAnamnese({...fichaAnamnese, tipoSangramento: true})}>Sim</button>
-                        <button type="button" className={`toggle-btn ${!fichaAnamnese.tipoSangramento ? 'active no' : ''}`} onClick={() => setFichaAnamnese({...fichaAnamnese, tipoSangramento: false})}>Não</button>
+                        <button type="button" className={`toggle-btn ${fichaAnamnese.tipoSangramento ? 'active yes' : ''}`} onClick={() => setFichaAnamnese({ ...fichaAnamnese, tipoSangramento: true })}>Sim</button>
+                        <button type="button" className={`toggle-btn ${!fichaAnamnese.tipoSangramento ? 'active no' : ''}`} onClick={() => setFichaAnamnese({ ...fichaAnamnese, tipoSangramento: false })}>Não</button>
                       </div>
                     </div>
                   </div>
@@ -837,12 +837,12 @@ export function Patients() {
                     <div className="anamnese-controls">
                       <span className="anamnese-label">Cirurgia nos últimos 5 anos?</span>
                       <div className="toggle-group">
-                        <button type="button" className={`toggle-btn ${fichaAnamnese.fezCirurgiaNosUltimosCincoAnos ? 'active yes' : ''}`} onClick={() => setFichaAnamnese({...fichaAnamnese, fezCirurgiaNosUltimosCincoAnos: true})}>Sim</button>
-                        <button type="button" className={`toggle-btn ${!fichaAnamnese.fezCirurgiaNosUltimosCincoAnos ? 'active no' : ''}`} onClick={() => setFichaAnamnese({...fichaAnamnese, fezCirurgiaNosUltimosCincoAnos: false})}>Não</button>
+                        <button type="button" className={`toggle-btn ${fichaAnamnese.fezCirurgiaNosUltimosCincoAnos ? 'active yes' : ''}`} onClick={() => setFichaAnamnese({ ...fichaAnamnese, fezCirurgiaNosUltimosCincoAnos: true })}>Sim</button>
+                        <button type="button" className={`toggle-btn ${!fichaAnamnese.fezCirurgiaNosUltimosCincoAnos ? 'active no' : ''}`} onClick={() => setFichaAnamnese({ ...fichaAnamnese, fezCirurgiaNosUltimosCincoAnos: false })}>Não</button>
                       </div>
                     </div>
                     {fichaAnamnese.fezCirurgiaNosUltimosCincoAnos && (
-                      <input type="text" className="input-field anamnese-details-input" placeholder="Qual cirurgia?" value={fichaAnamnese.qualCirurgia || ''} onChange={e => setFichaAnamnese({...fichaAnamnese, qualCirurgia: e.target.value})} required />
+                      <input type="text" className="input-field anamnese-details-input" placeholder="Qual cirurgia?" value={fichaAnamnese.qualCirurgia || ''} onChange={e => setFichaAnamnese({ ...fichaAnamnese, qualCirurgia: e.target.value })} required />
                     )}
                   </div>
 
@@ -851,8 +851,8 @@ export function Patients() {
                     <div className="anamnese-controls">
                       <span className="anamnese-label">Está grávida?</span>
                       <div className="toggle-group">
-                        <button type="button" className={`toggle-btn ${fichaAnamnese.estaGravida ? 'active yes' : ''}`} onClick={() => setFichaAnamnese({...fichaAnamnese, estaGravida: true})}>Sim</button>
-                        <button type="button" className={`toggle-btn ${!fichaAnamnese.estaGravida ? 'active no' : ''}`} onClick={() => setFichaAnamnese({...fichaAnamnese, estaGravida: false})}>Não</button>
+                        <button type="button" className={`toggle-btn ${fichaAnamnese.estaGravida ? 'active yes' : ''}`} onClick={() => setFichaAnamnese({ ...fichaAnamnese, estaGravida: true })}>Sim</button>
+                        <button type="button" className={`toggle-btn ${!fichaAnamnese.estaGravida ? 'active no' : ''}`} onClick={() => setFichaAnamnese({ ...fichaAnamnese, estaGravida: false })}>Não</button>
                       </div>
                     </div>
                   </div>
@@ -862,12 +862,12 @@ export function Patients() {
                     <div className="anamnese-controls">
                       <span className="anamnese-label">Reação à anestesia dental?</span>
                       <div className="toggle-group">
-                        <button type="button" className={`toggle-btn ${fichaAnamnese.jaTeveReacaoAnestesiaDental ? 'active yes' : ''}`} onClick={() => setFichaAnamnese({...fichaAnamnese, jaTeveReacaoAnestesiaDental: true})}>Sim</button>
-                        <button type="button" className={`toggle-btn ${!fichaAnamnese.jaTeveReacaoAnestesiaDental ? 'active no' : ''}`} onClick={() => setFichaAnamnese({...fichaAnamnese, jaTeveReacaoAnestesiaDental: false})}>Não</button>
+                        <button type="button" className={`toggle-btn ${fichaAnamnese.jaTeveReacaoAnestesiaDental ? 'active yes' : ''}`} onClick={() => setFichaAnamnese({ ...fichaAnamnese, jaTeveReacaoAnestesiaDental: true })}>Sim</button>
+                        <button type="button" className={`toggle-btn ${!fichaAnamnese.jaTeveReacaoAnestesiaDental ? 'active no' : ''}`} onClick={() => setFichaAnamnese({ ...fichaAnamnese, jaTeveReacaoAnestesiaDental: false })}>Não</button>
                       </div>
                     </div>
                     {fichaAnamnese.jaTeveReacaoAnestesiaDental && (
-                      <input type="text" className="input-field anamnese-details-input" placeholder="Qual reação?" value={fichaAnamnese.qualReacaoAnestesia || ''} onChange={e => setFichaAnamnese({...fichaAnamnese, qualReacaoAnestesia: e.target.value})} required />
+                      <input type="text" className="input-field anamnese-details-input" placeholder="Qual reação?" value={fichaAnamnese.qualReacaoAnestesia || ''} onChange={e => setFichaAnamnese({ ...fichaAnamnese, qualReacaoAnestesia: e.target.value })} required />
                     )}
                   </div>
 
@@ -876,12 +876,12 @@ export function Patients() {
                     <div className="anamnese-controls">
                       <span className="anamnese-label">Doença infectocontagiosa?</span>
                       <div className="toggle-group">
-                        <button type="button" className={`toggle-btn ${fichaAnamnese.portadorDoencaInfectoContagiosa ? 'active yes' : ''}`} onClick={() => setFichaAnamnese({...fichaAnamnese, portadorDoencaInfectoContagiosa: true})}>Sim</button>
-                        <button type="button" className={`toggle-btn ${!fichaAnamnese.portadorDoencaInfectoContagiosa ? 'active no' : ''}`} onClick={() => setFichaAnamnese({...fichaAnamnese, portadorDoencaInfectoContagiosa: false})}>Não</button>
+                        <button type="button" className={`toggle-btn ${fichaAnamnese.portadorDoencaInfectoContagiosa ? 'active yes' : ''}`} onClick={() => setFichaAnamnese({ ...fichaAnamnese, portadorDoencaInfectoContagiosa: true })}>Sim</button>
+                        <button type="button" className={`toggle-btn ${!fichaAnamnese.portadorDoencaInfectoContagiosa ? 'active no' : ''}`} onClick={() => setFichaAnamnese({ ...fichaAnamnese, portadorDoencaInfectoContagiosa: false })}>Não</button>
                       </div>
                     </div>
                     {fichaAnamnese.portadorDoencaInfectoContagiosa && (
-                      <input type="text" className="input-field anamnese-details-input" placeholder="Qual doença?" value={fichaAnamnese.qualDoencaInfectoContagiosa || ''} onChange={e => setFichaAnamnese({...fichaAnamnese, qualDoencaInfectoContagiosa: e.target.value})} required />
+                      <input type="text" className="input-field anamnese-details-input" placeholder="Qual doença?" value={fichaAnamnese.qualDoencaInfectoContagiosa || ''} onChange={e => setFichaAnamnese({ ...fichaAnamnese, qualDoencaInfectoContagiosa: e.target.value })} required />
                     )}
                   </div>
                 </div>
@@ -1017,11 +1017,10 @@ export function Patients() {
                           </span>
                         </td>
                         <td>
-                          <span className={`badge ${
-                            payment.statusPagamento === 'Pago' ? 'badge-success' : 
-                            payment.statusPagamento === 'Cancelado' ? 'badge-danger' : 
-                            'badge-warning'
-                          }`}>
+                          <span className={`badge ${payment.statusPagamento === 'Pago' ? 'badge-success' :
+                              payment.statusPagamento === 'Cancelado' ? 'badge-danger' :
+                                'badge-warning'
+                            }`}>
                             {payment.statusPagamento}
                           </span>
                         </td>
@@ -1030,15 +1029,15 @@ export function Patients() {
                           <div className="flex-row gap-2 justify-end">
                             {payment.statusPagamento === 'Pendente' && (
                               <>
-                                <button 
-                                  className="action-btn success" 
+                                <button
+                                  className="action-btn success"
                                   title="Marcar como Pago"
                                   onClick={() => handleMarkAsPaid(payment.id)}
                                 >
                                   <Check size={18} />
                                 </button>
-                                <button 
-                                  className="action-btn warning" 
+                                <button
+                                  className="action-btn warning"
                                   title="Cancelar Pagamento"
                                   onClick={() => handleCancelPayment(payment.id)}
                                 >
@@ -1046,8 +1045,8 @@ export function Patients() {
                                 </button>
                               </>
                             )}
-                            <button 
-                              className="action-btn danger" 
+                            <button
+                              className="action-btn danger"
                               title="Excluir Registro"
                               onClick={() => handleDeletePayment(payment.id)}
                             >

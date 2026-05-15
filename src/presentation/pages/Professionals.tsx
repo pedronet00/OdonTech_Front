@@ -162,7 +162,7 @@ export function Professionals() {
   };
 
   const filteredProfessionals = professionals.filter(p =>
-    p.nome.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    p.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.cro?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -221,8 +221,8 @@ export function Professionals() {
                 <td>{prof.cro || 'N/A'}</td>
                 <td style={{ textAlign: 'right' }}>
                   <div className="dropdown-container">
-                    <button 
-                      className="action-btn" 
+                    <button
+                      className="action-btn"
                       onClick={(e) => {
                         e.stopPropagation();
                         setActiveDropdown(activeDropdown === prof.id ? null : prof.id);
@@ -233,8 +233,8 @@ export function Professionals() {
 
                     {activeDropdown === prof.id && (
                       <div className="dropdown-menu" style={{ right: 0, top: '100%' }}>
-                        <button 
-                          className="dropdown-item" 
+                        <button
+                          className="dropdown-item"
                           onClick={() => {
                             setEditingProfessional(prof);
                             setActiveDropdown(null);
@@ -242,8 +242,8 @@ export function Professionals() {
                         >
                           <Edit2 size={16} /> Editar
                         </button>
-                        <button 
-                          className="dropdown-item" 
+                        <button
+                          className="dropdown-item"
                           onClick={() => {
                             setResettingPasswordId(prof.id);
                             setActiveDropdown(null);
@@ -321,7 +321,7 @@ export function Professionals() {
                   </div>
 
                   <div className="form-group">
-                    <label className="input-label">Senha Temporária</label>
+                    <label className="input-label">Senha</label>
                     <input
                       type="password"
                       className="input-field"
