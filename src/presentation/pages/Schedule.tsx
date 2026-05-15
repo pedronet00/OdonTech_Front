@@ -478,7 +478,9 @@ export function Schedule() {
                 </div>
                 <div style={{ flex: 1 }}>
                   <h4 style={{ fontSize: '1.1rem', marginBottom: '2px' }}>{selectedAgendamento.nomePaciente}</h4>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Status: <span className={`status-text ${selectedAgendamento.status.toLowerCase()}`}>{selectedAgendamento.status}</span></p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                    Status: <span className={`status-badge ${selectedAgendamento.status.toLowerCase()}`}>{selectedAgendamento.status}</span>
+                  </div>
                 </div>
               </div>
 
@@ -503,49 +505,55 @@ export function Schedule() {
                   )}
 
                   <div className="flex-col gap-3" style={{ marginTop: '16px' }}>
-                    <p style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>Gerenciamento do Horário</p>
+                    {selectedAgendamento.status !== 'Realizado' && 
+                     selectedAgendamento.status !== 'Concluido' && 
+                     selectedAgendamento.status !== 'Cancelado' && (
+                      <>
+                        <p style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>Gerenciamento do Horário</p>
 
-                    <div className="flex-col gap-2">
-                      {selectedAgendamento.status === 'Confirmado' ? (
-                        <button
-                          className="btn btn-primary"
-                          style={{ padding: '16px', borderRadius: '12px', fontSize: '1rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', width: '100%', boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)', border: 'none', background: 'linear-gradient(135deg, var(--primary), #2563eb)' }}
-                          onClick={handleGerarAtendimento}
-                          disabled={isSaving}
-                        >
-                          <PlayCircle size={22} /> {isSaving ? 'Gerando...' : 'Iniciar Atendimento'}
-                        </button>
-                      ) : selectedAgendamento.status === 'Agendado' ? (
-                        <button
-                          className="btn btn-success"
-                          style={{ padding: '14px', borderRadius: '10px', fontSize: '0.95rem', fontWeight: 600, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)' }}
-                          onClick={() => handleUpdateStatus(selectedAgendamento.id, 'confirmar')}
-                        >
-                          Confirmar Presença
-                        </button>
-                      ) : null}
+                        <div className="flex-col gap-2">
+                          {selectedAgendamento.status === 'Confirmado' ? (
+                            <button
+                              className="btn btn-primary"
+                              style={{ padding: '16px', borderRadius: '12px', fontSize: '1rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', width: '100%', boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)', border: 'none', background: 'linear-gradient(135deg, var(--primary), #2563eb)' }}
+                              onClick={handleGerarAtendimento}
+                              disabled={isSaving}
+                            >
+                              <PlayCircle size={22} /> {isSaving ? 'Gerando...' : 'Iniciar Atendimento'}
+                            </button>
+                          ) : selectedAgendamento.status === 'Agendado' ? (
+                            <button
+                              className="btn btn-success"
+                              style={{ padding: '14px', borderRadius: '10px', fontSize: '0.95rem', fontWeight: 600, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)' }}
+                              onClick={() => handleUpdateStatus(selectedAgendamento.id, 'confirmar')}
+                            >
+                              Confirmar Presença
+                            </button>
+                          ) : null}
 
-                      {(selectedAgendamento.status === 'Agendado' || selectedAgendamento.status === 'Confirmado') && (
-                        <div className="grid-cols-2 gap-2" style={{ width: '100%' }}>
-                          <button className="btn btn-warning"
-                            style={{ padding: '12px', borderRadius: '10px', fontWeight: 600, width: '100%', boxShadow: '0 4px 12px rgba(245, 158, 11, 0.1)' }}
-                            onClick={() => handleUpdateStatus(selectedAgendamento.id, 'falta')}>
-                            Marcar Falta
-                          </button>
-                          <button className="btn btn-danger"
-                            style={{ padding: '12px', borderRadius: '10px', fontWeight: 600, width: '100%', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.1)' }}
-                            onClick={() => handleUpdateStatus(selectedAgendamento.id, 'cancelar')}>
-                            Cancelar
-                          </button>
+                          {(selectedAgendamento.status === 'Agendado' || selectedAgendamento.status === 'Confirmado') && (
+                            <div className="grid-cols-2 gap-2" style={{ width: '100%' }}>
+                              <button className="btn btn-warning"
+                                style={{ padding: '12px', borderRadius: '10px', fontWeight: 600, width: '100%', boxShadow: '0 4px 12px rgba(245, 158, 11, 0.1)' }}
+                                onClick={() => handleUpdateStatus(selectedAgendamento.id, 'falta')}>
+                                Marcar Falta
+                              </button>
+                              <button className="btn btn-danger"
+                                style={{ padding: '12px', borderRadius: '10px', fontWeight: 600, width: '100%', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.1)' }}
+                                onClick={() => handleUpdateStatus(selectedAgendamento.id, 'cancelar')}>
+                                Cancelar
+                              </button>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
 
-                    <button className="btn btn-secondary w-full"
-                      style={{ marginTop: '8px', padding: '12px', borderRadius: '10px', borderStyle: 'dashed', fontWeight: 500 }}
-                      onClick={() => setIsRescheduling(true)}>
-                      Reagendar para outra data
-                    </button>
+                        <button className="btn btn-secondary w-full"
+                          style={{ marginTop: '8px', padding: '12px', borderRadius: '10px', borderStyle: 'dashed', fontWeight: 500 }}
+                          onClick={() => setIsRescheduling(true)}>
+                          Reagendar para outra data
+                        </button>
+                      </>
+                    )}
                   </div>
                 </>
               ) : (
