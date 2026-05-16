@@ -19,7 +19,7 @@ export function Records() {
   const [editingAtendimento, setEditingAtendimento] = useState<Atendimento | null>(null);
   const [printingAtendimento, setPrintingAtendimento] = useState<Atendimento | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  
+
   // File management state
   const [activeTab, setActiveTab] = useState<'timeline' | 'files'>('timeline');
   const [arquivos, setArquivos] = useState<any[]>([]);
@@ -155,6 +155,14 @@ export function Records() {
   };
 
   const handleStatusUpdate = async (atendimentoId: string, newStatusText: string) => {
+    if (newStatusText === 'Concluido' || newStatusText === 'Cancelado') {
+      const confirmed = window.confirm(`Deseja realmente marcar como ${newStatusText}? Esta ação não poderá ser desfeita e o registro não poderá mais ser editado ou excluído.`);
+      if (!confirmed) {
+        setActiveDropdown(null);
+        return;
+      }
+    }
+
     try {
       setUpdatingId(atendimentoId);
       const response = await fetch(`${API_BASE_URL}/atendimentos/${atendimentoId}/status?status=${newStatusText}`, {
@@ -168,7 +176,7 @@ export function Records() {
 
       toast.success('Status atualizado com sucesso!');
       setActiveDropdown(null);
-      await fetchData(); 
+      await fetchData();
     } catch (err) {
       toast.error('Erro ao atualizar status do atendimento.');
       console.error(err);
@@ -284,13 +292,13 @@ export function Records() {
       </div>
 
       <div className="tabs-container">
-        <button 
+        <button
           className={`tab-button ${activeTab === 'timeline' ? 'active' : ''}`}
           onClick={() => setActiveTab('timeline')}
         >
           <Activity size={18} /> Linha do Tempo
         </button>
-        <button 
+        <button
           className={`tab-button ${activeTab === 'files' ? 'active' : ''}`}
           onClick={() => setActiveTab('files')}
         >
@@ -305,12 +313,15 @@ export function Records() {
               <p>Carregando prontuário...</p>
             </div>
           ) : atendimentos.length > 0 ? (
-            atendimentos.map((atendimento) => (
-              <div 
-                key={atendimento.id} 
-                className="timeline-item"
-                style={{ zIndex: activeDropdown === atendimento.id ? 100 : 1 }}
-              >
+            atendimentos.map((atendimento) => {
+              const isFinalized = atendimento.statusAtendimento === 'Concluido' || atendimento.statusAtendimento === 'Cancelado';
+
+              return (
+                <div
+                  key={atendimento.id}
+                  className="timeline-item"
+                  style={{ zIndex: activeDropdown === atendimento.id ? 100 : 1 }}
+                >
                 <div className="glass-panel atendimento-card" style={{ padding: '24px' }}>
                   <div className="flex-row justify-between items-start" style={{ marginBottom: '20px' }}>
                     <div className="flex-row gap-4">
@@ -336,16 +347,16 @@ export function Records() {
                       </div>
                     </div>
                     <div className="flex-row items-center gap-3">
-                      <button 
-                        className="btn btn-secondary" 
+                      <button
+                        className="btn btn-secondary"
                         style={{ fontSize: '0.8rem' }}
                         onClick={() => handlePrint(atendimento)}
                       >
                         <FileText size={14} /> Imprimir Registro
                       </button>
-  
+
                       <div className="dropdown-container">
-                        <button 
+                        <button
                           className="action-btn"
                           disabled={updatingId === atendimento.id}
                           onClick={(e) => {
@@ -355,53 +366,63 @@ export function Records() {
                         >
                           <MoreVertical size={20} />
                         </button>
-  
+
                         {activeDropdown === atendimento.id && (
                           <div className="dropdown-menu" style={{ right: 0, top: '100%' }}>
-                            <button 
-                              className="dropdown-item" 
-                              onClick={() => handleEdit(atendimento.id)}
-                              disabled={updatingId === atendimento.id}
-                            >
-                              <Edit size={16} /> Editar
-                            </button>
-                            <div style={{ borderTop: '1px solid var(--border-subtle)', margin: '4px 0' }}></div>
-                            <div className="p-2">
-                              <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '4px', paddingLeft: '8px' }}>Alterar Status</p>
-                              <div className="flex-col gap-1">
-                                {Object.keys(statusMap).map(status => (
-                                  <button 
-                                    key={status}
-                                    className="dropdown-item"
-                                    onClick={() => handleStatusUpdate(atendimento.id, status)}
-                                    disabled={updatingId === atendimento.id}
-                                    style={{ padding: '6px 8px' }}
-                                  >
-                                    {status}
-                                  </button>
-                                ))}
+                            {!isFinalized ? (
+                              <>
+                                <button
+                                  className="dropdown-item"
+                                  onClick={() => handleEdit(atendimento.id)}
+                                  disabled={updatingId === atendimento.id}
+                                >
+                                  <Edit size={16} /> Editar
+                                </button>
+                                <div style={{ borderTop: '1px solid var(--border-subtle)', margin: '4px 0' }}></div>
+                                <div className="p-2">
+                                  <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '4px', paddingLeft: '8px' }}>Alterar Status</p>
+                                  <div className="flex-col gap-1">
+                                    {Object.keys(statusMap).map(status => (
+                                      <button
+                                        key={status}
+                                        className="dropdown-item"
+                                        onClick={() => handleStatusUpdate(atendimento.id, status)}
+                                        disabled={updatingId === atendimento.id}
+                                        style={{ padding: '6px 8px' }}
+                                      >
+                                        {status}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                                <div style={{ borderTop: '1px solid var(--border-subtle)', margin: '4px 0' }}></div>
+                                <button
+                                  className="dropdown-item danger"
+                                  onClick={() => handleDelete(atendimento.id)}
+                                  disabled={updatingId === atendimento.id}
+                                >
+                                  <Trash2 size={16} /> Excluir
+                                </button>
+                              </>
+                            ) : (
+                              <div className="p-3" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', width: '180px' }}>
+                                <FileText size={16} style={{ marginBottom: '8px', color: 'var(--primary)' }} />
+                                <p>Este registro está <strong>{atendimento.statusAtendimento}</strong> e não pode mais ser alterado.</p>
                               </div>
-                            </div>
-                            <div style={{ borderTop: '1px solid var(--border-subtle)', margin: '4px 0' }}></div>
-                            <button 
-                              className="dropdown-item danger" 
-                              onClick={() => handleDelete(atendimento.id)}
-                              disabled={updatingId === atendimento.id}
-                            >
-                              <Trash2 size={16} /> Excluir
-                            </button>
+                            )}
                           </div>
                         )}
                       </div>
                     </div>
                   </div>
-  
+
                   <div style={{ padding: '16px', background: 'var(--bg-main)', borderRadius: '12px', border: '1px solid var(--border-subtle)' }}>
                     <p style={{ whiteSpace: 'pre-wrap', color: 'var(--text-main)', fontSize: '1rem', lineHeight: '1.6' }}>{atendimento.descricao}</p>
                   </div>
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           ) : (
             <div className="glass-panel" style={{ padding: '64px', textAlign: 'center', color: 'var(--text-muted)' }}>
               <Activity size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
@@ -434,23 +455,21 @@ export function Records() {
                     <h4 className="file-name" title={arquivo.nomeOriginal}>{arquivo.nomeOriginal}</h4>
                     <div className="file-meta">
                       <span>{(arquivo.tamanhoBytes / 1024 / 1024).toFixed(2)} MB</span>
-                      <span>•</span>
-                      <span>{new Date(arquivo.dataCriacao).toLocaleDateString('pt-BR')}</span>
                     </div>
                     <div style={{ marginTop: '8px' }}>
                       <span className="badge badge-warning" style={{ fontSize: '0.65rem' }}>{arquivo.tipo}</span>
                     </div>
                   </div>
                   <div className="file-actions">
-                    <button 
-                      className="btn btn-secondary w-full" 
+                    <button
+                      className="btn btn-secondary w-full"
                       style={{ padding: '6px', fontSize: '0.8rem' }}
                       onClick={() => handleDownload(arquivo.id, arquivo.nomeOriginal)}
                     >
                       <Download size={14} /> Baixar
                     </button>
-                    <button 
-                      className="btn btn-secondary" 
+                    <button
+                      className="btn btn-secondary"
                       style={{ padding: '6px', color: 'var(--danger)' }}
                       onClick={() => handleDeleteArquivo(arquivo.id)}
                     >
@@ -486,10 +505,10 @@ export function Records() {
                   <div className="grid-cols-2">
                     <div className="form-group">
                       <label className="input-label">Tipo de Atendimento</label>
-                      <select 
+                      <select
                         className="input-field"
                         value={editingAtendimento.tipoAtendimento}
-                        onChange={e => setEditingAtendimento({...editingAtendimento, tipoAtendimento: e.target.value})}
+                        onChange={e => setEditingAtendimento({ ...editingAtendimento, tipoAtendimento: e.target.value })}
                       >
                         <option value="Consulta">Consulta</option>
                         <option value="Cirurgia">Cirurgia</option>
@@ -500,10 +519,10 @@ export function Records() {
                     </div>
                     <div className="form-group">
                       <label className="input-label">Status</label>
-                      <select 
+                      <select
                         className="input-field"
                         value={editingAtendimento.statusAtendimento}
-                        onChange={e => setEditingAtendimento({...editingAtendimento, statusAtendimento: e.target.value})}
+                        onChange={e => setEditingAtendimento({ ...editingAtendimento, statusAtendimento: e.target.value })}
                       >
                         <option value="Pendente">Pendente</option>
                         <option value="EmAndamento">Em Andamento</option>
@@ -516,21 +535,21 @@ export function Records() {
                   <div className="grid-cols-2">
                     <div className="form-group">
                       <label className="input-label">Data</label>
-                      <input 
-                        type="date" 
+                      <input
+                        type="date"
                         className="input-field"
                         value={editingAtendimento.dataAtendimento.split('T')[0]}
-                        onChange={e => setEditingAtendimento({...editingAtendimento, dataAtendimento: e.target.value})}
+                        onChange={e => setEditingAtendimento({ ...editingAtendimento, dataAtendimento: e.target.value })}
                         required
                       />
                     </div>
                     <div className="form-group">
                       <label className="input-label">Número do Dente (Opcional)</label>
-                      <input 
-                        type="number" 
+                      <input
+                        type="number"
                         className="input-field"
                         value={editingAtendimento.dente || ''}
-                        onChange={e => setEditingAtendimento({...editingAtendimento, dente: parseInt(e.target.value)})}
+                        onChange={e => setEditingAtendimento({ ...editingAtendimento, dente: parseInt(e.target.value) })}
                         placeholder="Ex: 21"
                       />
                     </div>
@@ -538,11 +557,11 @@ export function Records() {
 
                   <div className="form-group">
                     <label className="input-label">Evolução / Descrição</label>
-                    <textarea 
+                    <textarea
                       className="input-field"
                       style={{ minHeight: '150px', resize: 'vertical' }}
                       value={editingAtendimento.descricao}
-                      onChange={e => setEditingAtendimento({...editingAtendimento, descricao: e.target.value})}
+                      onChange={e => setEditingAtendimento({ ...editingAtendimento, descricao: e.target.value })}
                       required
                     />
                   </div>

@@ -38,11 +38,11 @@ export function Login() {
 
       const data = await response.json();
 
-      if (data.token) {
-        login(data.token);
+      if (data.accessToken) {
+        login(data);
         navigate('/pacientes');
       } else {
-        throw new Error('Token não retornado');
+        throw new Error('Tokens não retornados');
       }
     } catch (err) {
       setError('Email ou senha inválidos. Tente novamente.');
