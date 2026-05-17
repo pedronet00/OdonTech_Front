@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Stethoscope, Search, UserPlus, X, Edit2, MoreVertical, Lock } from 'lucide-react';
 import { useAuth } from '../../application/contexts/AuthContext';
-import { API_BASE_URL } from '../../infrastructure/config/api';
+import ApiClient from '../../infrastructure/api/apiClient';
 import type { Profissional, ProfissionalRequest } from '../../domain/models/types';
 import toast from 'react-hot-toast';
 import { applyCroMask } from '../../utils/masks';
@@ -30,11 +30,7 @@ export function Professionals() {
 
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/profissionais/clinica/${user.clinica_id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await ApiClient.get(`/profissionais/clinica/${user.clinica_id}`);
 
       if (!response.ok) throw new Error('Falha ao carregar profissionais');
 
@@ -66,14 +62,7 @@ export function Professionals() {
         clinicaId: user.clinica_id
       };
 
-      const response = await fetch(`${API_BASE_URL}/profissionais`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
+      const response = await ApiClient.post('/profissionais', payload);
 
       if (!response.ok) {
         const errData = await response.json().catch(() => null);
@@ -106,14 +95,7 @@ export function Professionals() {
         clinicaId: user.clinica_id
       };
 
-      const response = await fetch(`${API_BASE_URL}/profissionais/${editingProfessional.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
+      const response = await ApiClient.put(`/profissionais/${editingProfessional.id}`, payload);
 
       if (!response.ok) {
         const errData = await response.json().catch(() => null);
@@ -137,14 +119,7 @@ export function Professionals() {
 
     try {
       setIsSaving(true);
-      const response = await fetch(`${API_BASE_URL}/profissionais/${resettingPasswordId}/alterar-senha`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(newPassword)
-      });
+      const response = await ApiClient.patch(`/profissionais/${resettingPasswordId}/alterar-senha`, newPassword);
 
       if (!response.ok) {
         const errData = await response.json().catch(() => null);

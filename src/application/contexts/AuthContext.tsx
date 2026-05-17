@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const initializeAuth = () => {
+  const initializeAuth = async () => {
     if (token) {
       try {
         const decoded = jwtDecode<User>(token);
@@ -47,7 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (isExpired) {
           // Tenta fazer o refresh se tiver refresh token
-          handleRefresh();
+          await handleRefresh();
         } else {
           setUser(decoded);
           setLoading(false);
@@ -64,12 +64,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const handleUnauthorized = () => logout();
+    const handleTokenUpdated = () => {
+      const newToken = localStorage.getItem('@OdonTech:token');
+      if (newToken) {
+        setToken(newToken);
+        try {
+          const decoded = jwtDecode<User>(newToken);
+          setUser(decoded);
+        } catch (e) {
+          console.error('Erro ao decodificar token atualizado', e);
+        }
+      }
+    };
+
     window.addEventListener('unauthorized', handleUnauthorized);
+    window.addEventListener('tokenUpdated', handleTokenUpdated);
     
     initializeAuth();
 
     return () => {
       window.removeEventListener('unauthorized', handleUnauthorized);
+      window.removeEventListener('tokenUpdated', handleTokenUpdated);
     };
   }, []);
 
@@ -77,11 +92,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const currentRefreshToken = refreshToken || localStorage.getItem('@OdonTech:refreshToken');
     if (!currentRefreshToken) {
       logout();
+      setLoading(false);
       return;
     }
 
     try {
-      // Endpoint de refresh (assumindo /auth/refresh ou similar baseado no padrão do projeto)
       const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -95,6 +110,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Refresh error', error);
       logout();
+    } finally {
+      setLoading(false);
     }
   };
 

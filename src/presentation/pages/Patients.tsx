@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserPlus, Search, MoreVertical, Edit, Trash2, FileText, ClipboardList, Save, X, DollarSign, Plus, Check, Ban } from 'lucide-react';
 import { useAuth } from '../../application/contexts/AuthContext';
-import { API_BASE_URL } from '../../infrastructure/config/api';
+import ApiClient from '../../infrastructure/api/apiClient';
 import type { Patient, FichaAnamnese, Pagamento, NovoPagamento } from '../../domain/models/types';
 import { FormaPagamentoEnum, StatusPagamentoEnum } from '../../domain/models/types';
 import toast from 'react-hot-toast';
@@ -50,11 +50,7 @@ export function Patients() {
 
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/pacientes/clinica/${user.clinica_id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await ApiClient.get(`/pacientes/clinica/${user.clinica_id}`);
 
       if (!response.ok) throw new Error('Falha ao carregar pacientes');
 
@@ -76,12 +72,7 @@ export function Patients() {
     if (!window.confirm('Tem certeza que deseja excluir este paciente?')) return;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/pacientes/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await ApiClient.delete(`/pacientes/${id}`);
 
       if (!response.ok) throw new Error('Falha ao excluir paciente');
 
@@ -100,16 +91,9 @@ export function Patients() {
 
     try {
       setIsSaving(true);
-      const response = await fetch(`${API_BASE_URL}/pacientes/${editingPatient.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          ...editingPatient,
-          sexo: editingPatient.sexo === 'Masculino' ? 0 : 1
-        })
+      const response = await ApiClient.put(`/pacientes/${editingPatient.id}`, {
+        ...editingPatient,
+        sexo: editingPatient.sexo === 'Masculino' ? 0 : 1
       });
 
       if (!response.ok) {
@@ -150,14 +134,7 @@ export function Patients() {
         sexo: newPatient.sexo === 'Masculino' ? 0 : 1
       };
 
-      const response = await fetch(`${API_BASE_URL}/pacientes`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
+      const response = await ApiClient.post('/pacientes', payload);
 
       if (!response.ok) {
         const error = new Error('Falha ao criar paciente') as any;
@@ -188,9 +165,7 @@ export function Patients() {
 
   const fetchAnamnese = async (pacienteId: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/fichas-anamnese/paciente/${pacienteId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const response = await ApiClient.get(`/fichas-anamnese/paciente/${pacienteId}`);
 
       if (response.status === 404) {
         // Prepare empty ficha if not found
@@ -224,14 +199,7 @@ export function Patients() {
         tipoPA: typeof fichaAnamnese.tipoPA === 'string' ? (paMapping[fichaAnamnese.tipoPA] || 2) : fichaAnamnese.tipoPA
       };
 
-      const response = await fetch(`${API_BASE_URL}/fichas-anamnese`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
+      const response = await ApiClient.post('/fichas-anamnese', payload);
 
       if (!response.ok) throw new Error('Falha ao salvar ficha de anamnese');
 
@@ -247,9 +215,7 @@ export function Patients() {
   const fetchPayments = async (pacienteId: string) => {
     try {
       setIsFinanceLoading(true);
-      const response = await fetch(`${API_BASE_URL}/pagamentos/paciente/${pacienteId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const response = await ApiClient.get(`/pagamentos/paciente/${pacienteId}`);
 
       if (!response.ok) throw new Error('Falha ao carregar pagamentos');
 
@@ -278,14 +244,7 @@ export function Patients() {
         observacao: newPayment.observacao || ''
       };
 
-      const response = await fetch(`${API_BASE_URL}/pagamentos`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
+      const response = await ApiClient.post('/pagamentos', payload);
 
       if (!response.ok) throw new Error('Falha ao registrar pagamento');
 
@@ -308,10 +267,7 @@ export function Patients() {
 
   const handleMarkAsPaid = async (paymentId: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/pagamentos/${paymentId}/pagar`, {
-        method: 'PATCH',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const response = await ApiClient.patch(`/pagamentos/${paymentId}/pagar`);
 
       if (!response.ok) throw new Error('Falha ao confirmar pagamento');
 
@@ -325,10 +281,7 @@ export function Patients() {
   const handleCancelPayment = async (paymentId: string) => {
     if (!window.confirm('Deseja realmente cancelar este pagamento?')) return;
     try {
-      const response = await fetch(`${API_BASE_URL}/pagamentos/${paymentId}/cancelar`, {
-        method: 'PATCH',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const response = await ApiClient.patch(`/pagamentos/${paymentId}/cancelar`);
 
       if (!response.ok) throw new Error('Falha ao cancelar pagamento');
 
@@ -342,10 +295,7 @@ export function Patients() {
   const handleDeletePayment = async (paymentId: string) => {
     if (!window.confirm('Deletar permanentemente este registro?')) return;
     try {
-      const response = await fetch(`${API_BASE_URL}/pagamentos/${paymentId}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const response = await ApiClient.delete(`/pagamentos/${paymentId}`);
 
       if (!response.ok) throw new Error('Falha ao excluir pagamento');
 

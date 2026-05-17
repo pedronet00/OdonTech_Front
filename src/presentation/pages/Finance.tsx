@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { DollarSign, TrendingUp, CreditCard, Calendar, Briefcase, PieChart, ArrowUpRight } from 'lucide-react';
 import { useAuth } from '../../application/contexts/AuthContext';
-import { API_BASE_URL } from '../../infrastructure/config/api';
+import ApiClient from '../../infrastructure/api/apiClient';
 import type { FinanceDashboard, MonthData } from '../../domain/models/types';
 import toast from 'react-hot-toast';
 
@@ -18,9 +18,7 @@ export function Finance() {
       if (!user?.clinica_id) return;
       try {
         setLoading(true);
-        const response = await fetch(`${API_BASE_URL}/dashboard/financeiro/${user.clinica_id}/${currentYear}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const response = await ApiClient.get(`/dashboard/financeiro/${user.clinica_id}/${currentYear}`);
 
         if (!response.ok) throw new Error('Falha ao carregar dashboard financeiro');
 

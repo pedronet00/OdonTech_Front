@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FilePlus, Activity, ArrowLeft, Calendar, User, Hash, MoreVertical, Edit, Trash2, X, File, Download, Image, Upload, FileText } from 'lucide-react';
 import { useAuth } from '../../application/contexts/AuthContext';
-import { API_BASE_URL } from '../../infrastructure/config/api';
+import ApiClient from '../../infrastructure/api/apiClient';
 import type { Atendimento, Patient } from '../../domain/models/types';
 import toast from 'react-hot-toast';
 
@@ -46,17 +46,13 @@ export function Records() {
 
     try {
       setLoading(true);
-      const patientRes = await fetch(`${API_BASE_URL}/pacientes/${id}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const patientRes = await ApiClient.get(`/pacientes/${id}`);
       if (patientRes.ok) {
         const pData = await patientRes.json();
         setPatient(pData);
       }
 
-      const atendimentosRes = await fetch(`${API_BASE_URL}/atendimentos/paciente/${id}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const atendimentosRes = await ApiClient.get(`/atendimentos/paciente/${id}`);
 
       if (!atendimentosRes.ok) throw new Error('Falha ao carregar atendimentos');
 
@@ -79,9 +75,7 @@ export function Records() {
     if (!id) return;
     try {
       setFilesLoading(true);
-      const response = await fetch(`${API_BASE_URL}/pacientes/${id}/arquivos`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const response = await ApiClient.get(`/pacientes/${id}/arquivos`);
       if (response.ok) {
         setArquivos(await response.json());
       }
@@ -102,11 +96,7 @@ export function Records() {
       formData.append('arquivo', file);
       formData.append('tipo', '3'); // Documento por padrão
 
-      const response = await fetch(`${API_BASE_URL}/pacientes/${id}/arquivos`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: formData
-      });
+      const response = await ApiClient.post(`/pacientes/${id}/arquivos`, formData);
 
       if (!response.ok) throw new Error('Falha no upload');
 
@@ -121,9 +111,7 @@ export function Records() {
 
   const handleDownload = async (arquivoId: string, nomeOriginal: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/pacientes/${id}/arquivos/${arquivoId}/download`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const response = await ApiClient.get(`/pacientes/${id}/arquivos/${arquivoId}/download`);
       if (!response.ok) throw new Error('Falha no download');
 
       const blob = await response.blob();
@@ -142,10 +130,7 @@ export function Records() {
   const handleDeleteArquivo = async (arquivoId: string) => {
     if (!window.confirm('Excluir este arquivo permanentemente?')) return;
     try {
-      const response = await fetch(`${API_BASE_URL}/pacientes/${id}/arquivos/${arquivoId}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const response = await ApiClient.delete(`/pacientes/${id}/arquivos/${arquivoId}`);
       if (!response.ok) throw new Error('Falha ao excluir');
       toast.success('Arquivo excluído!');
       fetchArquivos();
@@ -165,12 +150,7 @@ export function Records() {
 
     try {
       setUpdatingId(atendimentoId);
-      const response = await fetch(`${API_BASE_URL}/atendimentos/${atendimentoId}/status?status=${newStatusText}`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await ApiClient.patch(`/atendimentos/${atendimentoId}/status?status=${newStatusText}`);
 
       if (!response.ok) throw new Error('Falha ao atualizar status');
 
@@ -188,9 +168,7 @@ export function Records() {
   const handleEdit = async (atendimentoId: string) => {
     try {
       setUpdatingId(atendimentoId);
-      const response = await fetch(`${API_BASE_URL}/atendimentos/${atendimentoId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const response = await ApiClient.get(`/atendimentos/${atendimentoId}`);
       if (!response.ok) throw new Error('Falha ao buscar dados do atendimento');
       const data = await response.json();
       setEditingAtendimento(data);
@@ -218,14 +196,7 @@ export function Records() {
         statusAtendimento: statusMap[editingAtendimento.statusAtendimento] || 1
       };
 
-      const response = await fetch(`${API_BASE_URL}/atendimentos/${editingAtendimento.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
+      const response = await ApiClient.put(`/atendimentos/${editingAtendimento.id}`, payload);
 
       if (!response.ok) throw new Error('Falha ao atualizar atendimento');
 
@@ -244,10 +215,7 @@ export function Records() {
 
     try {
       setUpdatingId(atendimentoId);
-      const response = await fetch(`${API_BASE_URL}/atendimentos/${atendimentoId}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const response = await ApiClient.delete(`/atendimentos/${atendimentoId}`);
 
       if (!response.ok) throw new Error('Falha ao excluir atendimento');
 

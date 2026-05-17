@@ -4,13 +4,13 @@ import { ChevronLeft, ChevronRight, X, Clock, Calendar as CalendarIcon, UserPlus
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, parseISO, isBefore, addMinutes } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAuth } from '../../application/contexts/AuthContext';
-import { API_BASE_URL } from '../../infrastructure/config/api';
+import ApiClient from '../../infrastructure/api/apiClient';
 import type { Agendamento, Patient, Profissional, NovoAgendamento } from '../../domain/models/types';
 import toast from 'react-hot-toast';
 import './Schedule.css';
 
 export function Schedule() {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -22,6 +22,7 @@ export function Schedule() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [professionals, setProfessionals] = useState<Profissional[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filterProfessionalId, setFilterProfessionalId] = useState<string>('all');
 
   // Form State
   const [selectedPatientId, setSelectedPatientId] = useState('');
@@ -39,12 +40,15 @@ export function Schedule() {
     if (!user?.clinica_id) return;
     try {
       setLoading(true);
-      const headers = { 'Authorization': `Bearer ${token}` };
+
+      const appointmentsUrl = filterProfessionalId === 'all' 
+        ? `/agendamentos/clinica/${user.clinica_id}`
+        : `/agendamentos/profissional/${filterProfessionalId}`;
 
       const [appRes, patRes, profRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/agendamentos/clinica/${user.clinica_id}`, { headers }),
-        fetch(`${API_BASE_URL}/pacientes/clinica/${user.clinica_id}`, { headers }),
-        fetch(`${API_BASE_URL}/profissionais/clinica/${user.clinica_id}`, { headers }).catch(() => null)
+        ApiClient.get(appointmentsUrl),
+        ApiClient.get(`/pacientes/clinica/${user.clinica_id}`),
+        ApiClient.get(`/profissionais/clinica/${user.clinica_id}`).catch(() => null)
       ]);
 
       if (appRes.ok) setAppointments(await appRes.json());
@@ -66,7 +70,7 @@ export function Schedule() {
 
   useEffect(() => {
     fetchData();
-  }, [user?.clinica_id, token]);
+  }, [user?.clinica_id, filterProfessionalId]);
 
   const handleCreateAgendamento = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,14 +101,7 @@ export function Schedule() {
         observacao
       };
 
-      const response = await fetch(`${API_BASE_URL}/agendamentos`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
+      const response = await ApiClient.post('/agendamentos', payload);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -127,10 +124,7 @@ export function Schedule() {
 
   const handleUpdateStatus = async (id: string, action: 'confirmar' | 'cancelar' | 'falta') => {
     try {
-      const response = await fetch(`${API_BASE_URL}/agendamentos/${id}/${action}`, {
-        method: 'PATCH',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const response = await ApiClient.patch(`/agendamentos/${id}/${action}`);
 
       if (!response.ok) throw new Error(`Falha ao ${action} agendamento`);
 
@@ -167,14 +161,7 @@ export function Schedule() {
         payload.dataAtendimento = format(now, "yyyy-MM-dd'T'HH:mm:ss");
       }
 
-      const response = await fetch(`${API_BASE_URL}/atendimentos/agendamento/${selectedAgendamento.id}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
+      const response = await ApiClient.post(`/atendimentos/agendamento/${selectedAgendamento.id}`, payload);
 
       if (!response.ok) throw new Error('Falha ao gerar atendimento');
 
@@ -200,16 +187,9 @@ export function Schedule() {
       const start = new Date(`${newRescheduleDate}T${newRescheduleTime}`);
       const end = addMinutes(start, selectedAgendamento.duracaoMinutos);
 
-      const response = await fetch(`${API_BASE_URL}/agendamentos/${selectedAgendamento.id}/reagendar`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          dataHoraInicio: format(start, "yyyy-MM-dd'T'HH:mm:ss"),
-          dataHoraFim: format(end, "yyyy-MM-dd'T'HH:mm:ss")
-        })
+      const response = await ApiClient.patch(`/agendamentos/${selectedAgendamento.id}/reagendar`, {
+        dataHoraInicio: format(start, "yyyy-MM-dd'T'HH:mm:ss"),
+        dataHoraFim: format(end, "yyyy-MM-dd'T'HH:mm:ss")
       });
 
       if (!response.ok) throw new Error('Falha ao reagendar');
@@ -225,9 +205,7 @@ export function Schedule() {
 
   const openDetailModal = async (id: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/agendamentos/${id}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const response = await ApiClient.get(`/agendamentos/${id}`);
       if (!response.ok) throw new Error('Erro ao buscar detalhes');
       const data = await response.json();
       setSelectedAgendamento(data);
@@ -242,11 +220,24 @@ export function Schedule() {
   // Calendar Engine
   const renderHeader = () => (
     <div className="calendar-header">
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-        <h2 style={{ textTransform: 'capitalize', margin: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+        <h2 style={{ textTransform: 'capitalize', margin: 0, minWidth: '180px' }}>
           {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
         </h2>
+        
+        <select 
+          className="input-field" 
+          style={{ width: '220px', height: '40px', fontSize: '0.9rem' }}
+          value={filterProfessionalId}
+          onChange={(e) => setFilterProfessionalId(e.target.value)}
+        >
+          <option value="all">Todos os Profissionais</option>
+          {professionals.map(p => (
+            <option key={p.id} value={p.id}>{p.nome}</option>
+          ))}
+        </select>
       </div>
+      
       <div style={{ display: 'flex', gap: '8px' }}>
         <button className="btn btn-secondary" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
           <ChevronLeft size={20} />
@@ -338,6 +329,9 @@ export function Schedule() {
     }
 
     setSelectedTimeSlot(time);
+    if (filterProfessionalId !== 'all') {
+      setSelectedProfissionalId(filterProfessionalId);
+    }
     setIsModalOpen(true);
   };
 
@@ -365,34 +359,39 @@ export function Schedule() {
 
           <div className="day-timeline">
             {timeSlots.map(time => {
-              const app = dailyAppointments.find(a => format(parseISO(a.dataHoraInicio), 'HH:mm') === time);
+              const appsAtTime = dailyAppointments.filter(a => format(parseISO(a.dataHoraInicio), 'HH:mm') === time);
 
               return (
-                <div key={time} className="time-slot">
+                <div key={time} className="time-slot" style={{ minHeight: appsAtTime.length > 1 ? 'auto' : '80px' }}>
                   <div className="time-label">{time}</div>
-                  {app ? (
-                    <div
-                      className={`time-content occupied status-card-${app.status.toLowerCase()}`}
-                      title={app.nomePaciente}
-                      style={{ height: 'auto', padding: '12px' }}
-                      onClick={() => openDetailModal(app.id)}
-                    >
-                      <div className="flex-col gap-1 w-full">
-                        <div className="flex-row justify-between items-start w-full">
-                          <div style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '0.95rem' }}>{app.nomePaciente}</div>
-                          <span className={`status-badge ${app.status.toLowerCase()}`}>{app.status}</span>
+                  <div className="time-content-container" style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+                    {appsAtTime.length > 0 ? (
+                      appsAtTime.map(app => (
+                        <div
+                          key={app.id}
+                          className={`time-content occupied status-card-${app.status.toLowerCase()}`}
+                          title={app.nomePaciente}
+                          style={{ height: 'auto', padding: '12px', width: '100%' }}
+                          onClick={() => openDetailModal(app.id)}
+                        >
+                          <div className="flex-col gap-1 w-full">
+                            <div className="flex-row justify-between items-start w-full">
+                              <div style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '0.95rem' }}>{app.nomePaciente}</div>
+                              <span className={`status-badge ${app.status.toLowerCase()}`}>{app.status}</span>
+                            </div>
+                            <div className="flex-col gap-0" style={{ marginTop: '4px' }}>
+                              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Prof. {app.nomeProfissional}</p>
+                              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{app.duracaoMinutos} minutos de duração</p>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex-col gap-0" style={{ marginTop: '4px' }}>
-                          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Prof. {app.nomeProfissional}</p>
-                          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{app.duracaoMinutos} minutos de duração</p>
-                        </div>
+                      ))
+                    ) : (
+                      <div className="time-content free" onClick={() => handleOpenSchedule(time)} style={{ width: '100%' }}>
+                        <span><UserPlus size={14} /> Horário Livre</span>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="time-content free" onClick={() => handleOpenSchedule(time)}>
-                      <span><UserPlus size={14} /> Horário Livre</span>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               );
             })}

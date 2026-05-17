@@ -1,29 +1,42 @@
 import { API_BASE_URL } from '../config/api';
 
 class ApiClient {
+  private static refreshPromise: Promise<string | null> | null = null;
+
   private static async refreshAccessToken(): Promise<string | null> {
-    const refreshToken = localStorage.getItem('@OdonTech:refreshToken');
-    if (!refreshToken) return null;
+    if (this.refreshPromise) return this.refreshPromise;
 
-    try {
-      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken })
-      });
+    this.refreshPromise = (async () => {
+      const refreshToken = localStorage.getItem('@OdonTech:refreshToken');
+      if (!refreshToken) return null;
 
-      if (!response.ok) throw new Error('Refresh failed');
+      try {
+        const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken })
+        });
 
-      const data = await response.json();
-      localStorage.setItem('@OdonTech:token', data.accessToken);
-      localStorage.setItem('@OdonTech:refreshToken', data.refreshToken);
-      localStorage.setItem('@OdonTech:expiresAt', data.expiresAt);
-      
-      return data.accessToken;
-    } catch (error) {
-      console.error('API Client: Refresh error', error);
-      return null;
-    }
+        if (!response.ok) throw new Error('Refresh failed');
+
+        const data = await response.json();
+        localStorage.setItem('@OdonTech:token', data.accessToken);
+        localStorage.setItem('@OdonTech:refreshToken', data.refreshToken);
+        localStorage.setItem('@OdonTech:expiresAt', data.expiresAt);
+        
+        // Notifica o AuthContext que o token mudou
+        window.dispatchEvent(new CustomEvent('tokenUpdated'));
+        
+        return data.accessToken;
+      } catch (error) {
+        console.error('API Client: Refresh error', error);
+        return null;
+      } finally {
+        this.refreshPromise = null;
+      }
+    })();
+
+    return this.refreshPromise;
   }
 
   public static async request(endpoint: string, options: RequestInit = {}): Promise<Response> {
@@ -66,29 +79,32 @@ class ApiClient {
   }
 
   public static async post(endpoint: string, data?: any, options: RequestInit = {}) {
+    const isFormData = data instanceof FormData;
     return this.request(endpoint, {
       ...options,
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...options.headers },
-      body: data ? JSON.stringify(data) : undefined
+      headers: isFormData ? options.headers : { 'Content-Type': 'application/json', ...options.headers },
+      body: isFormData ? data : (data ? JSON.stringify(data) : undefined)
     });
   }
 
   public static async put(endpoint: string, data?: any, options: RequestInit = {}) {
+    const isFormData = data instanceof FormData;
     return this.request(endpoint, {
       ...options,
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', ...options.headers },
-      body: data ? JSON.stringify(data) : undefined
+      headers: isFormData ? options.headers : { 'Content-Type': 'application/json', ...options.headers },
+      body: isFormData ? data : (data ? JSON.stringify(data) : undefined)
     });
   }
 
   public static async patch(endpoint: string, data?: any, options: RequestInit = {}) {
+    const isFormData = data instanceof FormData;
     return this.request(endpoint, {
       ...options,
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', ...options.headers },
-      body: data ? JSON.stringify(data) : undefined
+      headers: isFormData ? options.headers : { 'Content-Type': 'application/json', ...options.headers },
+      body: isFormData ? data : (data ? JSON.stringify(data) : undefined)
     });
   }
 
