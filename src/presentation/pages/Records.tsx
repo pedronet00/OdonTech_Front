@@ -19,6 +19,14 @@ export function Records() {
   const [editingAtendimento, setEditingAtendimento] = useState<Atendimento | null>(null);
   const [printingAtendimento, setPrintingAtendimento] = useState<Atendimento | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [newAtendimento, setNewAtendimento] = useState({
+    tipoAtendimento: 'Consulta',
+    statusAtendimento: 'Pendente',
+    dataAtendimento: new Date().toISOString().split('T')[0],
+    descricao: '',
+    dente: 0
+  });
 
   // File management state
   const [activeTab, setActiveTab] = useState<'timeline' | 'files'>('timeline');
@@ -46,20 +54,13 @@ export function Records() {
 
     try {
       setLoading(true);
-      const patientRes = await ApiClient.get(`/pacientes/${id}`);
-      if (patientRes.ok) {
-        const pData = await patientRes.json();
-        setPatient(pData);
-      }
+      const pData = await ApiClient.get<Patient>(`/atendimentos/paciente/${id}`);
+      setPatient(pData);
 
-      const atendimentosRes = await ApiClient.get(`/atendimentos/paciente/${id}`);
-
-      if (!atendimentosRes.ok) throw new Error('Falha ao carregar atendimentos');
-
-      const aData = await atendimentosRes.json();
+      const aData = await ApiClient.get<Atendimento[]>(`/atendimentos/paciente/${id}`);
       setAtendimentos(aData);
-    } catch (err) {
-      toast.error('Não foi possível carregar o prontuário.');
+    } catch (err: any) {
+      toast.error(err.message || 'Não foi possível carregar o prontuário.');
       console.error(err);
     } finally {
       setLoading(false);
@@ -75,10 +76,8 @@ export function Records() {
     if (!id) return;
     try {
       setFilesLoading(true);
-      const response = await ApiClient.get(`/pacientes/${id}/arquivos`);
-      if (response.ok) {
-        setArquivos(await response.json());
-      }
+      const data = await ApiClient.get<any[]>(`/pacientes/${id}/arquivos`);
+      setArquivos(data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -96,14 +95,12 @@ export function Records() {
       formData.append('arquivo', file);
       formData.append('tipo', '3'); // Documento por padrão
 
-      const response = await ApiClient.post(`/pacientes/${id}/arquivos`, formData);
-
-      if (!response.ok) throw new Error('Falha no upload');
+      await ApiClient.post(`/pacientes/${id}/arquivos`, formData);
 
       toast.success('Arquivo enviado com sucesso!');
       fetchArquivos();
-    } catch (err) {
-      toast.error('Erro ao enviar arquivo.');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao enviar arquivo.');
     } finally {
       setIsUploading(false);
     }
@@ -111,7 +108,8 @@ export function Records() {
 
   const handleDownload = async (arquivoId: string, nomeOriginal: string) => {
     try {
-      const response = await ApiClient.get(`/pacientes/${id}/arquivos/${arquivoId}/download`);
+      // Usamos request diretamente para o download pois precisamos do blob da Response bruta
+      const response = await ApiClient.request(`/pacientes/${id}/arquivos/${arquivoId}/download`);
       if (!response.ok) throw new Error('Falha no download');
 
       const blob = await response.blob();
@@ -130,12 +128,11 @@ export function Records() {
   const handleDeleteArquivo = async (arquivoId: string) => {
     if (!window.confirm('Excluir este arquivo permanentemente?')) return;
     try {
-      const response = await ApiClient.delete(`/pacientes/${id}/arquivos/${arquivoId}`);
-      if (!response.ok) throw new Error('Falha ao excluir');
+      await ApiClient.delete(`/pacientes/${id}/arquivos/${arquivoId}`);
       toast.success('Arquivo excluído!');
       fetchArquivos();
-    } catch (err) {
-      toast.error('Erro ao excluir arquivo.');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao excluir arquivo.');
     }
   };
 
@@ -150,15 +147,13 @@ export function Records() {
 
     try {
       setUpdatingId(atendimentoId);
-      const response = await ApiClient.patch(`/atendimentos/${atendimentoId}/status?status=${newStatusText}`);
-
-      if (!response.ok) throw new Error('Falha ao atualizar status');
+      await ApiClient.patch(`/atendimentos/${atendimentoId}/status?status=${newStatusText}`);
 
       toast.success('Status atualizado com sucesso!');
       setActiveDropdown(null);
       await fetchData();
-    } catch (err) {
-      toast.error('Erro ao atualizar status do atendimento.');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao atualizar status do atendimento.');
       console.error(err);
     } finally {
       setUpdatingId(null);
@@ -168,13 +163,11 @@ export function Records() {
   const handleEdit = async (atendimentoId: string) => {
     try {
       setUpdatingId(atendimentoId);
-      const response = await ApiClient.get(`/atendimentos/${atendimentoId}`);
-      if (!response.ok) throw new Error('Falha ao buscar dados do atendimento');
-      const data = await response.json();
+      const data = await ApiClient.get<Atendimento>(`/atendimentos/${atendimentoId}`);
       setEditingAtendimento(data);
       setActiveDropdown(null);
-    } catch (err) {
-      toast.error('Erro ao buscar dados para edição.');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao buscar dados para edição.');
     } finally {
       setUpdatingId(null);
     }
@@ -196,15 +189,48 @@ export function Records() {
         statusAtendimento: statusMap[editingAtendimento.statusAtendimento] || 1
       };
 
-      const response = await ApiClient.put(`/atendimentos/${editingAtendimento.id}`, payload);
-
-      if (!response.ok) throw new Error('Falha ao atualizar atendimento');
+      await ApiClient.put(`/atendimentos/${editingAtendimento.id}`, payload);
 
       toast.success('Atendimento atualizado com sucesso!');
       setEditingAtendimento(null);
       await fetchData();
-    } catch (err) {
-      toast.error('Erro ao salvar alterações.');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao salvar alterações.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!id || !user) return;
+
+    try {
+      setIsSaving(true);
+      const payload = {
+        pacienteId: id,
+        profissionalId: user.sub,
+        dataAtendimento: newAtendimento.dataAtendimento,
+        descricao: newAtendimento.descricao,
+        dente: newAtendimento.dente || 0,
+        tipoAtendimento: tipoMap[newAtendimento.tipoAtendimento] || 1,
+        statusAtendimento: statusMap[newAtendimento.statusAtendimento] || 1
+      };
+
+      await ApiClient.post('/atendimentos', payload);
+
+      toast.success('Atendimento registrado com sucesso!');
+      setIsCreating(false);
+      setNewAtendimento({
+        tipoAtendimento: 'Consulta',
+        statusAtendimento: 'Pendente',
+        dataAtendimento: new Date().toISOString().split('T')[0],
+        descricao: '',
+        dente: 0
+      });
+      await fetchData();
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao salvar atendimento.');
     } finally {
       setIsSaving(false);
     }
@@ -215,14 +241,12 @@ export function Records() {
 
     try {
       setUpdatingId(atendimentoId);
-      const response = await ApiClient.delete(`/atendimentos/${atendimentoId}`);
-
-      if (!response.ok) throw new Error('Falha ao excluir atendimento');
+      await ApiClient.delete(`/atendimentos/${atendimentoId}`);
 
       toast.success('Atendimento excluído!');
       await fetchData();
-    } catch (err) {
-      toast.error('Erro ao excluir atendimento.');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao excluir atendimento.');
     } finally {
       setUpdatingId(null);
     }
@@ -248,12 +272,12 @@ export function Records() {
       <div className="flex-row justify-between items-center" style={{ marginBottom: '24px' }}>
         <div>
           <h1 style={{ fontSize: '2rem', marginBottom: '8px' }}>
-            Prontuário {patient ? `- ${patient.nome}` : ''}
+            Prontuário {patient ? `- ${patient.nomePaciente}` : ''}
           </h1>
           <p style={{ color: 'var(--text-muted)' }}>Histórico clínico e documentos digitais do paciente</p>
         </div>
         {activeTab === 'timeline' && (
-          <button className="btn btn-primary" onClick={() => toast.success('Módulo em desenvolvimento')}>
+          <button className="btn btn-primary" onClick={() => setIsCreating(true)}>
             <FilePlus size={18} /> Novo Atendimento
           </button>
         )}
@@ -290,103 +314,103 @@ export function Records() {
                   className="timeline-item"
                   style={{ zIndex: activeDropdown === atendimento.id ? 100 : 1 }}
                 >
-                <div className="glass-panel atendimento-card" style={{ padding: '24px' }}>
-                  <div className="flex-row justify-between items-start" style={{ marginBottom: '20px' }}>
-                    <div className="flex-row gap-4">
-                      <div style={{ background: 'var(--bg-surface-hover)', padding: '12px', borderRadius: '12px', color: 'var(--primary)' }}>
-                        <Activity size={28} />
-                      </div>
-                      <div>
-                        <div className="flex-row items-center gap-2" style={{ marginBottom: '4px' }}>
-                          <h3 style={{ fontSize: '1.25rem', fontWeight: 700 }}>{atendimento.tipoAtendimento}</h3>
-                          <span className={`status-badge ${atendimento.statusAtendimento.toLowerCase().replace(/\s/g, '')}`}>
-                            {atendimento.statusAtendimento}
-                          </span>
+                  <div className="glass-panel atendimento-card" style={{ padding: '24px' }}>
+                    <div className="flex-row justify-between items-start" style={{ marginBottom: '20px' }}>
+                      <div className="flex-row gap-4">
+                        <div style={{ background: 'var(--bg-surface-hover)', padding: '12px', borderRadius: '12px', color: 'var(--primary)' }}>
+                          <Activity size={28} />
                         </div>
-                        <div className="flex-row items-center gap-4" style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                          <span className="flex-row items-center gap-1"><Calendar size={14} /> {new Date(atendimento.dataAtendimento).toLocaleDateString('pt-BR')}</span>
-                          <span className="flex-row items-center gap-1"><User size={14} /> {atendimento.nomeProfissional}</span>
-                          {atendimento.dente && (
-                            <span className="flex-row items-center gap-1">
-                              <Hash size={14} /> Dente: <span className="dente-badge">{atendimento.dente}</span>
+                        <div>
+                          <div className="flex-row items-center gap-2" style={{ marginBottom: '4px' }}>
+                            <h3 style={{ fontSize: '1.25rem', fontWeight: 700 }}>{atendimento.tipoAtendimento}</h3>
+                            <span className={`status-badge ${atendimento.statusAtendimento.toLowerCase().replace(/\s/g, '')}`}>
+                              {atendimento.statusAtendimento}
                             </span>
+                          </div>
+                          <div className="flex-row items-center gap-4" style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                            <span className="flex-row items-center gap-1"><Calendar size={14} /> {new Date(atendimento.dataAtendimento).toLocaleDateString('pt-BR')}</span>
+                            <span className="flex-row items-center gap-1"><User size={14} /> {atendimento.nomeProfissional}</span>
+                            {atendimento.dente && (
+                              <span className="flex-row items-center gap-1">
+                                <Hash size={14} /> Dente: <span className="dente-badge">{atendimento.dente}</span>
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex-row items-center gap-3">
+                        <button
+                          className="btn btn-secondary"
+                          style={{ fontSize: '0.8rem' }}
+                          onClick={() => handlePrint(atendimento)}
+                        >
+                          <FileText size={14} /> Imprimir Registro
+                        </button>
+
+                        <div className="dropdown-container">
+                          <button
+                            className="action-btn"
+                            disabled={updatingId === atendimento.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveDropdown(activeDropdown === atendimento.id ? null : atendimento.id);
+                            }}
+                          >
+                            <MoreVertical size={20} />
+                          </button>
+
+                          {activeDropdown === atendimento.id && (
+                            <div className="dropdown-menu" style={{ right: 0, top: '100%' }}>
+                              {!isFinalized ? (
+                                <>
+                                  <button
+                                    className="dropdown-item"
+                                    onClick={() => handleEdit(atendimento.id)}
+                                    disabled={updatingId === atendimento.id}
+                                  >
+                                    <Edit size={16} /> Editar
+                                  </button>
+                                  <div style={{ borderTop: '1px solid var(--border-subtle)', margin: '4px 0' }}></div>
+                                  <div className="p-2">
+                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '4px', paddingLeft: '8px' }}>Alterar Status</p>
+                                    <div className="flex-col gap-1">
+                                      {Object.keys(statusMap).map(status => (
+                                        <button
+                                          key={status}
+                                          className="dropdown-item"
+                                          onClick={() => handleStatusUpdate(atendimento.id, status)}
+                                          disabled={updatingId === atendimento.id}
+                                          style={{ padding: '6px 8px' }}
+                                        >
+                                          {status}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                  <div style={{ borderTop: '1px solid var(--border-subtle)', margin: '4px 0' }}></div>
+                                  <button
+                                    className="dropdown-item danger"
+                                    onClick={() => handleDelete(atendimento.id)}
+                                    disabled={updatingId === atendimento.id}
+                                  >
+                                    <Trash2 size={16} /> Excluir
+                                  </button>
+                                </>
+                              ) : (
+                                <div className="p-3" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', width: '180px' }}>
+                                  <FileText size={16} style={{ marginBottom: '8px', color: 'var(--primary)' }} />
+                                  <p>Este registro está <strong>{atendimento.statusAtendimento}</strong> e não pode mais ser alterado.</p>
+                                </div>
+                              )}
+                            </div>
                           )}
                         </div>
                       </div>
                     </div>
-                    <div className="flex-row items-center gap-3">
-                      <button
-                        className="btn btn-secondary"
-                        style={{ fontSize: '0.8rem' }}
-                        onClick={() => handlePrint(atendimento)}
-                      >
-                        <FileText size={14} /> Imprimir Registro
-                      </button>
 
-                      <div className="dropdown-container">
-                        <button
-                          className="action-btn"
-                          disabled={updatingId === atendimento.id}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActiveDropdown(activeDropdown === atendimento.id ? null : atendimento.id);
-                          }}
-                        >
-                          <MoreVertical size={20} />
-                        </button>
-
-                        {activeDropdown === atendimento.id && (
-                          <div className="dropdown-menu" style={{ right: 0, top: '100%' }}>
-                            {!isFinalized ? (
-                              <>
-                                <button
-                                  className="dropdown-item"
-                                  onClick={() => handleEdit(atendimento.id)}
-                                  disabled={updatingId === atendimento.id}
-                                >
-                                  <Edit size={16} /> Editar
-                                </button>
-                                <div style={{ borderTop: '1px solid var(--border-subtle)', margin: '4px 0' }}></div>
-                                <div className="p-2">
-                                  <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '4px', paddingLeft: '8px' }}>Alterar Status</p>
-                                  <div className="flex-col gap-1">
-                                    {Object.keys(statusMap).map(status => (
-                                      <button
-                                        key={status}
-                                        className="dropdown-item"
-                                        onClick={() => handleStatusUpdate(atendimento.id, status)}
-                                        disabled={updatingId === atendimento.id}
-                                        style={{ padding: '6px 8px' }}
-                                      >
-                                        {status}
-                                      </button>
-                                    ))}
-                                  </div>
-                                </div>
-                                <div style={{ borderTop: '1px solid var(--border-subtle)', margin: '4px 0' }}></div>
-                                <button
-                                  className="dropdown-item danger"
-                                  onClick={() => handleDelete(atendimento.id)}
-                                  disabled={updatingId === atendimento.id}
-                                >
-                                  <Trash2 size={16} /> Excluir
-                                </button>
-                              </>
-                            ) : (
-                              <div className="p-3" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', width: '180px' }}>
-                                <FileText size={16} style={{ marginBottom: '8px', color: 'var(--primary)' }} />
-                                <p>Este registro está <strong>{atendimento.statusAtendimento}</strong> e não pode mais ser alterado.</p>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
+                    <div style={{ padding: '16px', background: 'var(--bg-main)', borderRadius: '12px', border: '1px solid var(--border-subtle)' }}>
+                      <p style={{ whiteSpace: 'pre-wrap', color: 'var(--text-main)', fontSize: '1rem', lineHeight: '1.6' }}>{atendimento.descricao}</p>
                     </div>
-                  </div>
-
-                  <div style={{ padding: '16px', background: 'var(--bg-main)', borderRadius: '12px', border: '1px solid var(--border-subtle)' }}>
-                    <p style={{ whiteSpace: 'pre-wrap', color: 'var(--text-main)', fontSize: '1rem', lineHeight: '1.6' }}>{atendimento.descricao}</p>
-                  </div>
                   </div>
                 </div>
               );
@@ -454,6 +478,98 @@ export function Records() {
               <p style={{ fontSize: '0.9rem' }}>Faça o upload de exames, fotos ou documentos do paciente.</p>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Modal de Novo Atendimento */}
+      {isCreating && (
+        <div className="modal-overlay" onClick={() => setIsCreating(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Novo Atendimento</h2>
+              <button onClick={() => setIsCreating(false)} className="action-btn">
+                <X size={24} />
+              </button>
+            </div>
+            <form onSubmit={handleCreate}>
+              <div className="modal-body">
+                <div className="form-group-container">
+                  <div className="grid-cols-2">
+                    <div className="form-group">
+                      <label className="input-label">Tipo de Atendimento</label>
+                      <select
+                        className="input-field"
+                        value={newAtendimento.tipoAtendimento}
+                        onChange={e => setNewAtendimento({ ...newAtendimento, tipoAtendimento: e.target.value })}
+                      >
+                        <option value="Consulta">Consulta</option>
+                        <option value="Cirurgia">Cirurgia</option>
+                        <option value="Exame">Exame</option>
+                        <option value="Emergencia">Emergência</option>
+                        <option value="Procedimento">Procedimento</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label className="input-label">Status</label>
+                      <select
+                        className="input-field"
+                        value={newAtendimento.statusAtendimento}
+                        onChange={e => setNewAtendimento({ ...newAtendimento, statusAtendimento: e.target.value })}
+                      >
+                        <option value="Pendente">Pendente</option>
+                        <option value="EmAndamento">Em Andamento</option>
+                        <option value="Concluido">Concluído</option>
+                        <option value="Cancelado">Cancelado</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid-cols-2">
+                    <div className="form-group">
+                      <label className="input-label">Data</label>
+                      <input
+                        type="date"
+                        className="input-field"
+                        value={newAtendimento.dataAtendimento}
+                        onChange={e => setNewAtendimento({ ...newAtendimento, dataAtendimento: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="input-label">Número do Dente (Opcional)</label>
+                      <input
+                        type="number"
+                        className="input-field"
+                        value={newAtendimento.dente || ''}
+                        onChange={e => setNewAtendimento({ ...newAtendimento, dente: parseInt(e.target.value) })}
+                        placeholder="Ex: 21"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="input-label">Evolução / Descrição</label>
+                    <textarea
+                      className="input-field"
+                      style={{ minHeight: '150px', resize: 'vertical' }}
+                      value={newAtendimento.descricao}
+                      onChange={e => setNewAtendimento({ ...newAtendimento, descricao: e.target.value })}
+                      placeholder="Descreva o procedimento realizado, orientações dadas ao paciente, etc."
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setIsCreating(false)}>
+                  Cancelar
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={isSaving}>
+                  {isSaving ? 'Salvando...' : 'Registrar Atendimento'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 

@@ -34,31 +34,18 @@ export function Patients() {
   });
 
   const convenioMap: { [key: number]: string } = {
-    1: 'Unimed',
-    2: 'Bradesco',
-    3: 'Amil',
-    4: 'SulAmerica',
-    5: 'OesteSaude',
-    6: 'Athia',
-    7: 'SUS',
-    8: 'Particular',
-    9: 'Outros'
+    1: 'Unimed', 2: 'Bradesco', 3: 'Amil', 4: 'SulAmerica', 5: 'OesteSaude',
+    6: 'Athia', 7: 'SUS', 8: 'Particular', 9: 'Outros'
   };
 
   const fetchPatients = async () => {
     if (!user?.clinica_id) return;
-
     try {
       setLoading(true);
-      const response = await ApiClient.get(`/pacientes/clinica/${user.clinica_id}`);
-
-      if (!response.ok) throw new Error('Falha ao carregar pacientes');
-
-      const data = await response.json();
+      const data = await ApiClient.get<Patient[]>(`/pacientes/clinica/${user.clinica_id}`);
       setPatients(data);
-    } catch (err) {
-      setError('Não foi possível carregar a lista de pacientes.');
-      console.error(err);
+    } catch (err: any) {
+      setError(err.message || 'Não foi possível carregar a lista de pacientes.');
     } finally {
       setLoading(false);
     }
@@ -70,53 +57,30 @@ export function Patients() {
 
   const handleDelete = async (id: string) => {
     if (!window.confirm('Tem certeza que deseja excluir este paciente?')) return;
-
     try {
-      const response = await ApiClient.delete(`/pacientes/${id}`);
-
-      if (!response.ok) throw new Error('Falha ao excluir paciente');
-
+      await ApiClient.delete(`/pacientes/${id}`);
       setPatients(prev => prev.filter(p => p.id !== id));
       setActiveDropdown(null);
       toast.success('Paciente excluído com sucesso!');
-    } catch (err) {
-      toast.error('Erro ao excluir o paciente. Tente novamente.');
-      console.error(err);
+    } catch (err: any) {
+      toast.error(err.message);
     }
   };
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingPatient) return;
-
     try {
       setIsSaving(true);
-      const response = await ApiClient.put(`/pacientes/${editingPatient.id}`, {
+      await ApiClient.put(`/pacientes/${editingPatient.id}`, {
         ...editingPatient,
         sexo: editingPatient.sexo === 'Masculino' ? 0 : 1
       });
-
-      if (!response.ok) {
-        const error = new Error('Falha ao atualizar paciente') as any;
-        error.response = response;
-        throw error;
-      }
-
       toast.success('Paciente atualizado com sucesso!');
       await fetchPatients();
       setEditingPatient(null);
     } catch (err: any) {
-      if (err.response) {
-        try {
-          const errorData = await err.response.json();
-          if (Array.isArray(errorData) && errorData[0]?.message) {
-            toast.error(errorData[0].message);
-            return;
-          }
-        } catch { }
-      }
-      toast.error('Erro ao atualizar o paciente.');
-      console.error(err);
+      toast.error(err.message);
     } finally {
       setIsSaving(false);
     }
@@ -125,7 +89,6 @@ export function Patients() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPatient || !user?.clinica_id) return;
-
     try {
       setIsSaving(true);
       const payload = {
@@ -133,31 +96,12 @@ export function Patients() {
         clinicaId: user.clinica_id,
         sexo: newPatient.sexo === 'Masculino' ? 0 : 1
       };
-
-      const response = await ApiClient.post('/pacientes', payload);
-
-      if (!response.ok) {
-        const error = new Error('Falha ao criar paciente') as any;
-        error.response = response;
-        throw error;
-      }
-
+      await ApiClient.post('/pacientes', payload);
       toast.success('Paciente cadastrado com sucesso!');
       await fetchPatients();
-      setNewPatient(null);
       setIsCreating(false);
     } catch (err: any) {
-      if (err.response) {
-        try {
-          const errorData = await err.response.json();
-          if (Array.isArray(errorData) && errorData[0]?.message) {
-            toast.error(errorData[0].message);
-            return;
-          }
-        } catch { }
-      }
-      toast.error('Erro ao cadastrar o paciente.');
-      console.error(err);
+      toast.error(err.message);
     } finally {
       setIsSaving(false);
     }
@@ -165,48 +109,34 @@ export function Patients() {
 
   const fetchAnamnese = async (pacienteId: string) => {
     try {
-      const response = await ApiClient.get(`/fichas-anamnese/paciente/${pacienteId}`);
-
+      const response = await ApiClient.request(`/fichas-anamnese/paciente/${pacienteId}`);
       if (response.status === 404) {
-        // Prepare empty ficha if not found
-        setFichaAnamnese({
-          pacienteId,
-          tomandoAlgumMedicamento: false,
-        } as FichaAnamnese);
+        setFichaAnamnese({ pacienteId, tomandoAlgumMedicamento: false } as FichaAnamnese);
         return;
       }
-
-      if (!response.ok) throw new Error('Falha ao carregar ficha de anamnese');
-
-      const data = await response.json();
-      setFichaAnamnese(data);
-    } catch (err) {
-      toast.error('Erro ao carregar ficha de anamnese.');
+      if (!response.ok) throw new Error('Falha ao carregar anamnese');
+      const result = await response.json();
+      setFichaAnamnese(result.data);
+    } catch (err: any) {
+      toast.error(err.message);
     }
   };
 
   const handleSaveAnamnese = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fichaAnamnese) return;
-
     try {
       setIsSaving(true);
-      // Map PA string to Number if needed (Alta=1, Normal=2, Baixa=3 based on context search)
       const paMapping: { [key: string]: number } = { 'Alta': 1, 'Normal': 2, 'Baixa': 3 };
-
       const payload = {
         ...fichaAnamnese,
         tipoPA: typeof fichaAnamnese.tipoPA === 'string' ? (paMapping[fichaAnamnese.tipoPA] || 2) : fichaAnamnese.tipoPA
       };
-
-      const response = await ApiClient.post('/fichas-anamnese', payload);
-
-      if (!response.ok) throw new Error('Falha ao salvar ficha de anamnese');
-
-      toast.success('Ficha de anamnese salva com sucesso!');
+      await ApiClient.post('/fichas-anamnese', payload);
+      toast.success('Ficha salva com sucesso!');
       setFichaAnamnese(null);
-    } catch (err) {
-      toast.error('Erro ao salvar ficha.');
+    } catch (err: any) {
+      toast.error(err.message);
     } finally {
       setIsSaving(false);
     }
@@ -215,14 +145,10 @@ export function Patients() {
   const fetchPayments = async (pacienteId: string) => {
     try {
       setIsFinanceLoading(true);
-      const response = await ApiClient.get(`/pagamentos/paciente/${pacienteId}`);
-
-      if (!response.ok) throw new Error('Falha ao carregar pagamentos');
-
-      const data = await response.json();
+      const data = await ApiClient.get<Pagamento[]>(`/pagamentos/paciente/${pacienteId}`);
       setFinancePayments(data);
-    } catch (err) {
-      toast.error('Erro ao carregar pagamentos do paciente.');
+    } catch (err: any) {
+      toast.error(err.message);
     } finally {
       setIsFinanceLoading(false);
     }
@@ -231,35 +157,23 @@ export function Patients() {
   const handleCreatePayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedPatientForFinance || !newPayment.valor) return;
-
     try {
       setIsSaving(true);
       const payload: NovoPagamento = {
         pacienteId: selectedPatientForFinance.id,
         atendimentoId: null,
         valor: Number(newPayment.valor),
-        dataVencimento: newPayment.dataVencimento || new Date().toISOString().split('T')[0],
-        statusPagamento: Number(newPayment.statusPagamento ?? StatusPagamentoEnum.Pendente),
-        formaPagamento: Number(newPayment.formaPagamento ?? FormaPagamentoEnum.PIX),
+        dataVencimento: newPayment.dataVencimento || '',
+        statusPagamento: Number(newPayment.statusPagamento ?? 1),
+        formaPagamento: Number(newPayment.formaPagamento ?? 1),
         observacao: newPayment.observacao || ''
       };
-
-      const response = await ApiClient.post('/pagamentos', payload);
-
-      if (!response.ok) throw new Error('Falha ao registrar pagamento');
-
-      toast.success('Pagamento registrado com sucesso!');
+      await ApiClient.post('/pagamentos', payload);
+      toast.success('Pagamento registrado!');
       setIsAddingPayment(false);
       fetchPayments(selectedPatientForFinance.id);
-      setNewPaymentData({
-        valor: 0,
-        dataVencimento: new Date().toISOString().split('T')[0],
-        formaPagamento: FormaPagamentoEnum.PIX,
-        statusPagamento: StatusPagamentoEnum.Pendente,
-        observacao: ''
-      });
-    } catch (err) {
-      toast.error('Erro ao registrar pagamento.');
+    } catch (err: any) {
+      toast.error(err.message);
     } finally {
       setIsSaving(false);
     }
@@ -267,42 +181,33 @@ export function Patients() {
 
   const handleMarkAsPaid = async (paymentId: string) => {
     try {
-      const response = await ApiClient.patch(`/pagamentos/${paymentId}/pagar`);
-
-      if (!response.ok) throw new Error('Falha ao confirmar pagamento');
-
-      toast.success('Pagamento confirmado!');
+      await ApiClient.patch(`/pagamentos/${paymentId}/pagar`);
+      toast.success('Pago com sucesso!');
       if (selectedPatientForFinance) fetchPayments(selectedPatientForFinance.id);
-    } catch (err) {
-      toast.error('Erro ao confirmar pagamento.');
+    } catch (err: any) {
+      toast.error(err.message);
     }
   };
 
   const handleCancelPayment = async (paymentId: string) => {
-    if (!window.confirm('Deseja realmente cancelar este pagamento?')) return;
+    if (!window.confirm('Cancelar este pagamento?')) return;
     try {
-      const response = await ApiClient.patch(`/pagamentos/${paymentId}/cancelar`);
-
-      if (!response.ok) throw new Error('Falha ao cancelar pagamento');
-
-      toast.success('Pagamento cancelado!');
+      await ApiClient.patch(`/pagamentos/${paymentId}/cancelar`);
+      toast.success('Cancelado!');
       if (selectedPatientForFinance) fetchPayments(selectedPatientForFinance.id);
-    } catch (err) {
-      toast.error('Erro ao cancelar pagamento.');
+    } catch (err: any) {
+      toast.error(err.message);
     }
   };
 
   const handleDeletePayment = async (paymentId: string) => {
-    if (!window.confirm('Deletar permanentemente este registro?')) return;
+    if (!window.confirm('Excluir permanentemente?')) return;
     try {
-      const response = await ApiClient.delete(`/pagamentos/${paymentId}`);
-
-      if (!response.ok) throw new Error('Falha ao excluir pagamento');
-
-      toast.success('Pagamento excluído!');
+      await ApiClient.delete(`/pagamentos/${paymentId}`);
+      toast.success('Excluído!');
       if (selectedPatientForFinance) fetchPayments(selectedPatientForFinance.id);
-    } catch (err) {
-      toast.error('Erro ao excluir pagamento.');
+    } catch (err: any) {
+      toast.error(err.message);
     }
   };
 
@@ -313,28 +218,14 @@ export function Patients() {
   };
 
   const openCreateModal = () => {
-    setNewPatient({
-      nome: '',
-      email: '',
-      cpf: '',
-      dataNascimento: '',
-      sexo: 'Masculino',
-      convenio: 1,
-      telefone: ''
-    });
+    setNewPatient({ nome: '', email: '', cpf: '', dataNascimento: '', sexo: 'Masculino', convenio: 1, telefone: '' });
     setIsCreating(true);
   };
 
-  const filteredPatients = patients.filter(p =>
-    p.nome.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredPatients = patients.filter(p => p.nome.toLowerCase().includes(searchTerm.toLowerCase()));
 
   const toggleDropdown = (id: string) => {
-    if (activeDropdown === id) {
-      setActiveDropdown(null);
-    } else {
-      setActiveDropdown(id);
-    }
+    setActiveDropdown(activeDropdown === id ? null : id);
   };
 
   return (

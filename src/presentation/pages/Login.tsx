@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, Mail } from 'lucide-react';
 import { useAuth } from '../../application/contexts/AuthContext';
-import { API_BASE_URL } from '../../infrastructure/config/api';
+import ApiClient from '../../infrastructure/api/apiClient';
 import './Login.css';
 
 export function Login() {
@@ -24,28 +24,16 @@ export function Login() {
 
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, senha: password }),
-      });
+      const data = await ApiClient.post<any>('/auth/login', { email, senha: password });
 
-      if (!response.ok) {
-        throw new Error('Falha na autenticação');
-      }
-
-      const data = await response.json();
-
-      if (data.accessToken) {
+      if (data && data.accessToken) {
         login(data);
         navigate('/pacientes');
       } else {
-        throw new Error('Tokens não retornados');
+        throw new Error('Falha ao obter tokens de acesso.');
       }
-    } catch (err) {
-      setError('Email ou senha inválidos. Tente novamente.');
+    } catch (err: any) {
+      setError(err.message || 'Email ou senha inválidos. Tente novamente.');
       console.error(err);
     } finally {
       setLoading(false);

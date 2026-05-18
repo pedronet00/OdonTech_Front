@@ -18,11 +18,7 @@ export function Finance() {
       if (!user?.clinica_id) return;
       try {
         setLoading(true);
-        const response = await ApiClient.get(`/dashboard/financeiro/${user.clinica_id}/${currentYear}`);
-
-        if (!response.ok) throw new Error('Falha ao carregar dashboard financeiro');
-
-        const data: FinanceDashboard = await response.json();
+        const data = await ApiClient.get<FinanceDashboard>(`/dashboard/financeiro/${user.clinica_id}/${currentYear}`);
         setDashboard(data);
 
         // Select current month or first available
@@ -31,8 +27,8 @@ export function Finance() {
           const month = data.meses.find(m => m.mes === currentMonthIdx) || data.meses[0];
           setSelectedMonth(month);
         }
-      } catch (err) {
-        toast.error('Erro ao carregar dados financeiros.');
+      } catch (err: any) {
+        toast.error(err.message || 'Erro ao carregar dados financeiros.');
         console.error(err);
       } finally {
         setLoading(false);

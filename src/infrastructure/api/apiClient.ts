@@ -1,5 +1,16 @@
 import { API_BASE_URL } from '../config/api';
 
+export interface ApiResponse<T> {
+  isSuccess: boolean;
+  isFailure: boolean;
+  data: T;
+  errors: {
+    code: string;
+    message: string;
+    target: string | null;
+  }[];
+}
+
 class ApiClient {
   private static refreshPromise: Promise<string | null> | null = null;
 
@@ -24,7 +35,6 @@ class ApiClient {
         localStorage.setItem('@OdonTech:refreshToken', data.refreshToken);
         localStorage.setItem('@OdonTech:expiresAt', data.expiresAt);
         
-        // Notifica o AuthContext que o token mudou
         window.dispatchEvent(new CustomEvent('tokenUpdated'));
         
         return data.accessToken;
@@ -39,13 +49,35 @@ class ApiClient {
     return this.refreshPromise;
   }
 
+  private static async handleResponse<T>(response: Response): Promise<T> {
+    // Para respostas sem corpo (ex: 204 No Content)
+    if (response.status === 204) {
+      return {} as T;
+    }
+
+    let result: ApiResponse<T>;
+    try {
+      result = await response.json();
+    } catch (e) {
+      if (!response.ok) {
+        throw new Error(`Erro na requisição: ${response.statusText}`);
+      }
+      return {} as T;
+    }
+
+    if (result.isSuccess) {
+      return result.data;
+    }
+
+    const errorMessage = result.errors && result.errors.length > 0
+      ? result.errors[0].message
+      : 'Ocorreu um erro inesperado no processamento da requisição.';
+      
+    throw new Error(errorMessage);
+  }
+
   public static async request(endpoint: string, options: RequestInit = {}): Promise<Response> {
     let token = localStorage.getItem('@OdonTech:token');
-
-    // Pre-request check (optional but good)
-    // If we have a token, we could check if it's about to expire here, 
-    // but reactive 401 handling is more standard.
-
     const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
 
     const headers = {
@@ -55,7 +87,6 @@ class ApiClient {
 
     let response = await fetch(url, { ...options, headers });
 
-    // Se 401, tenta o refresh e repete a chamada
     if (response.status === 401) {
       const newToken = await this.refreshAccessToken();
       if (newToken) {
@@ -65,8 +96,6 @@ class ApiClient {
         };
         response = await fetch(url, { ...options, headers: retryHeaders });
       } else {
-        // Se falhou o refresh, redireciona pro login ou emite evento de logout
-        // Aqui podemos forçar um evento de window para o AuthContext captar
         window.dispatchEvent(new CustomEvent('unauthorized'));
       }
     }
@@ -74,42 +103,61 @@ class ApiClient {
     return response;
   }
 
-  public static async get(endpoint: string, options: RequestInit = {}) {
-    return this.request(endpoint, { ...options, method: 'GET' });
+  public static async get<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const response = await this.request(endpoint, { ...options, method: 'GET' });
+    return this.handleResponse<T>(response);
   }
 
-  public static async post(endpoint: string, data?: any, options: RequestInit = {}) {
+  public static async post<T>(endpoint: string, data?: any, options: RequestInit = {}): Promise<T> {
     const isFormData = data instanceof FormData;
-    return this.request(endpoint, {
+    const response = await this.request(endpoint, {
       ...options,
       method: 'POST',
       headers: isFormData ? options.headers : { 'Content-Type': 'application/json', ...options.headers },
       body: isFormData ? data : (data ? JSON.stringify(data) : undefined)
     });
+    return this.handleResponse<T>(response);
   }
 
-  public static async put(endpoint: string, data?: any, options: RequestInit = {}) {
+  public static async put<T>(endpoint: string, data?: any, options: RequestInit = {}): Promise<T> {
     const isFormData = data instanceof FormData;
-    return this.request(endpoint, {
+    const response = await this.request(endpoint, {
       ...options,
       method: 'PUT',
       headers: isFormData ? options.headers : { 'Content-Type': 'application/json', ...options.headers },
       body: isFormData ? data : (data ? JSON.stringify(data) : undefined)
     });
+    return this.handleResponse<T>(response);
   }
 
-  public static async patch(endpoint: string, data?: any, options: RequestInit = {}) {
+  public static async patch<T>(endpoint: string, data?: any, options: RequestInit = {}): Promise<T> {
     const isFormData = data instanceof FormData;
-    return this.request(endpoint, {
+    const response = await this.request(endpoint, {
       ...options,
       method: 'PATCH',
       headers: isFormData ? options.headers : { 'Content-Type': 'application/json', ...options.headers },
       body: isFormData ? data : (data ? JSON.stringify(data) : undefined)
     });
+    return this.handleResponse<T>(response);
   }
 
-  public static async delete(endpoint: string, options: RequestInit = {}) {
-    return this.request(endpoint, { ...options, method: 'DELETE' });
+  public static async delete<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const response = await this.request(endpoint, { ...options, method: 'DELETE' });
+    return this.handleResponse<T>(response);
+  }
+
+  /**
+   * Mantido apenas para compatibilidade legada se necessário, 
+   * mas o handleResponse agora centraliza isso.
+   */
+  public static async getErrorMessage(response: Response, defaultMessage: string): Promise<string> {
+    try {
+      const data = await response.clone().json();
+      if (data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+        return data.errors[0].message;
+      }
+    } catch (e) {}
+    return defaultMessage;
   }
 }
 

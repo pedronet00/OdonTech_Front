@@ -30,15 +30,10 @@ export function Professionals() {
 
     try {
       setLoading(true);
-      const response = await ApiClient.get(`/profissionais/clinica/${user.clinica_id}`);
-
-      if (!response.ok) throw new Error('Falha ao carregar profissionais');
-
-      const data = await response.json();
+      const data = await ApiClient.get<Profissional[]>(`/profissionais/clinica/${user.clinica_id}`);
       setProfessionals(data);
-    } catch (err) {
-      setError('Não foi possível carregar a lista de profissionais.');
-      console.error(err);
+    } catch (err: any) {
+      setError(err.message || 'Não foi possível carregar a lista de profissionais.');
     } finally {
       setLoading(false);
     }
@@ -62,12 +57,7 @@ export function Professionals() {
         clinicaId: user.clinica_id
       };
 
-      const response = await ApiClient.post('/profissionais', payload);
-
-      if (!response.ok) {
-        const errData = await response.json().catch(() => null);
-        throw new Error(errData?.[0]?.message || 'Falha ao cadastrar profissional');
-      }
+      await ApiClient.post('/profissionais', payload);
 
       toast.success('Profissional cadastrado com sucesso!');
       await fetchProfessionals();
@@ -95,12 +85,7 @@ export function Professionals() {
         clinicaId: user.clinica_id
       };
 
-      const response = await ApiClient.put(`/profissionais/${editingProfessional.id}`, payload);
-
-      if (!response.ok) {
-        const errData = await response.json().catch(() => null);
-        throw new Error(errData?.[0]?.message || 'Falha ao atualizar profissional');
-      }
+      await ApiClient.put(`/profissionais/${editingProfessional.id}`, payload);
 
       toast.success('Profissional atualizado com sucesso!');
       await fetchProfessionals();
@@ -119,12 +104,7 @@ export function Professionals() {
 
     try {
       setIsSaving(true);
-      const response = await ApiClient.patch(`/profissionais/${resettingPasswordId}/alterar-senha`, newPassword);
-
-      if (!response.ok) {
-        const errData = await response.json().catch(() => null);
-        throw new Error(errData?.[0]?.message || 'Falha ao redefinir senha');
-      }
+      await ApiClient.patch(`/profissionais/${resettingPasswordId}/alterar-senha`, newPassword);
 
       toast.success('Senha redefinida com sucesso!');
       setResettingPasswordId(null);

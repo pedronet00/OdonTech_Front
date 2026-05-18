@@ -45,24 +45,19 @@ export function Schedule() {
         ? `/agendamentos/clinica/${user.clinica_id}`
         : `/agendamentos/profissional/${filterProfessionalId}`;
 
-      const [appRes, patRes, profRes] = await Promise.all([
-        ApiClient.get(appointmentsUrl),
-        ApiClient.get(`/pacientes/clinica/${user.clinica_id}`),
-        ApiClient.get(`/profissionais/clinica/${user.clinica_id}`).catch(() => null)
+      const [aData, pData, profData] = await Promise.all([
+        ApiClient.get<Agendamento[]>(appointmentsUrl),
+        ApiClient.get<Patient[]>(`/pacientes/clinica/${user.clinica_id}`),
+        ApiClient.get<Profissional[]>(`/profissionais/clinica/${user.clinica_id}`).catch(() => [] as Profissional[])
       ]);
 
-      if (appRes.ok) setAppointments(await appRes.json());
-      if (patRes.ok) setPatients(await patRes.json());
-
-      if (profRes && profRes.ok) {
-        setProfessionals(await profRes.json());
-      } else {
-        setProfessionals([
-          { id: '08deae4d-edca-4250-8e1f-0d51dd5b2fc2', nome: 'pedro', email: '', cro: '', clinicaId: user.clinica_id }
-        ]);
-      }
-    } catch (err) {
-      toast.error('Erro ao carregar dados da agenda.');
+      setAppointments(aData);
+      setPatients(pData);
+      setProfessionals(profData.length > 0 ? profData : [
+        { id: '08deae4d-edca-4250-8e1f-0d51dd5b2fc2', nome: 'pedro', email: '', cro: '', clinicaId: user.clinica_id }
+      ]);
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao carregar dados da agenda.');
     } finally {
       setLoading(false);
     }
@@ -101,12 +96,7 @@ export function Schedule() {
         observacao
       };
 
-      const response = await ApiClient.post('/agendamentos', payload);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData[0]?.message || 'Falha ao criar agendamento');
-      }
+      await ApiClient.post('/agendamentos', payload);
 
       toast.success('Agendamento realizado com sucesso!');
       setIsModalOpen(false);
@@ -124,15 +114,13 @@ export function Schedule() {
 
   const handleUpdateStatus = async (id: string, action: 'confirmar' | 'cancelar' | 'falta') => {
     try {
-      const response = await ApiClient.patch(`/agendamentos/${id}/${action}`);
-
-      if (!response.ok) throw new Error(`Falha ao ${action} agendamento`);
+      await ApiClient.patch(`/agendamentos/${id}/${action}`);
 
       toast.success(`Agendamento ${action === 'confirmar' ? 'confirmado' : action === 'cancelar' ? 'cancelado' : 'marcado como falta'}!`);
 
       // Update local state for immediate feedback if in detail modal
       if (selectedAgendamento && selectedAgendamento.id === id) {
-        const statusMap = { confirmar: 'Confirmado', cancelar: 'Cancelado', falta: 'Falta' };
+        const statusMap: any = { confirmar: 'Confirmado', cancelar: 'Cancelado', falta: 'Falta' };
         setSelectedAgendamento({ ...selectedAgendamento, status: statusMap[action] });
       }
 
@@ -161,9 +149,7 @@ export function Schedule() {
         payload.dataAtendimento = format(now, "yyyy-MM-dd'T'HH:mm:ss");
       }
 
-      const response = await ApiClient.post(`/atendimentos/agendamento/${selectedAgendamento.id}`, payload);
-
-      if (!response.ok) throw new Error('Falha ao gerar atendimento');
+      await ApiClient.post(`/atendimentos/agendamento/${selectedAgendamento.id}`, payload);
 
       toast.success('Atendimento gerado com sucesso! Redirecionando para o prontuário...');
       setIsDetailModalOpen(false);
@@ -187,12 +173,10 @@ export function Schedule() {
       const start = new Date(`${newRescheduleDate}T${newRescheduleTime}`);
       const end = addMinutes(start, selectedAgendamento.duracaoMinutos);
 
-      const response = await ApiClient.patch(`/agendamentos/${selectedAgendamento.id}/reagendar`, {
+      await ApiClient.patch(`/agendamentos/${selectedAgendamento.id}/reagendar`, {
         dataHoraInicio: format(start, "yyyy-MM-dd'T'HH:mm:ss"),
         dataHoraFim: format(end, "yyyy-MM-dd'T'HH:mm:ss")
       });
-
-      if (!response.ok) throw new Error('Falha ao reagendar');
 
       toast.success('Reagendamento concluído!');
       setIsDetailModalOpen(false);
@@ -205,9 +189,7 @@ export function Schedule() {
 
   const openDetailModal = async (id: string) => {
     try {
-      const response = await ApiClient.get(`/agendamentos/${id}`);
-      if (!response.ok) throw new Error('Erro ao buscar detalhes');
-      const data = await response.json();
+      const data = await ApiClient.get<Agendamento>(`/agendamentos/${id}`);
       setSelectedAgendamento(data);
       setIsDetailModalOpen(true);
       setNewRescheduleDate(format(parseISO(data.dataHoraInicio), 'yyyy-MM-dd'));
