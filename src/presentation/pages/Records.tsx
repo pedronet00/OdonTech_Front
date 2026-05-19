@@ -272,7 +272,7 @@ export function Records() {
       <div className="flex-row justify-between items-center" style={{ marginBottom: '24px' }}>
         <div>
           <h1 style={{ fontSize: '2rem', marginBottom: '8px' }}>
-            Prontuário {patient ? `- ${patient.nomePaciente}` : ''}
+            Prontuário
           </h1>
           <p style={{ color: 'var(--text-muted)' }}>Histórico clínico e documentos digitais do paciente</p>
         </div>
