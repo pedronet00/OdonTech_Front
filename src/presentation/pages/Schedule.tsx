@@ -201,15 +201,29 @@ export function Schedule() {
 
   // Calendar Engine
   const renderHeader = () => (
-    <div className="calendar-header">
-      <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-        <h2 style={{ textTransform: 'capitalize', margin: 0, minWidth: '180px' }}>
+    <div className="calendar-header flex-col" style={{ gap: '16px', alignItems: 'stretch' }}>
+      <div className="flex-row justify-between items-center w-full">
+        <h2 style={{ textTransform: 'capitalize', margin: 0 }}>
           {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
         </h2>
         
+        <div className="flex-row gap-2 mobile-hide">
+          <button className="btn btn-secondary" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
+            <ChevronLeft size={20} />
+          </button>
+          <button className="btn btn-secondary" onClick={() => setCurrentMonth(new Date())}>
+            Hoje
+          </button>
+          <button className="btn btn-secondary" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
+            <ChevronRight size={20} />
+          </button>
+        </div>
+      </div>
+      
+      <div className="flex-row gap-3 w-full">
         <select 
           className="input-field" 
-          style={{ width: '220px', height: '40px', fontSize: '0.9rem' }}
+          style={{ flex: 1, height: '42px', fontSize: '0.9rem', minWidth: '0' }}
           value={filterProfessionalId}
           onChange={(e) => setFilterProfessionalId(e.target.value)}
         >
@@ -218,18 +232,18 @@ export function Schedule() {
             <option key={p.id} value={p.id}>{p.nome}</option>
           ))}
         </select>
-      </div>
-      
-      <div style={{ display: 'flex', gap: '8px' }}>
-        <button className="btn btn-secondary" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
-          <ChevronLeft size={20} />
-        </button>
-        <button className="btn btn-secondary" onClick={() => setCurrentMonth(new Date())}>
-          Hoje
-        </button>
-        <button className="btn btn-secondary" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
-          <ChevronRight size={20} />
-        </button>
+        
+        <div className="flex-row gap-2 mobile-only">
+          <button className="btn btn-secondary" style={{ padding: '8px' }} onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
+            <ChevronLeft size={18} />
+          </button>
+          <button className="btn btn-secondary" style={{ padding: '8px' }} onClick={() => setCurrentMonth(new Date())}>
+            Hoje
+          </button>
+          <button className="btn btn-secondary" style={{ padding: '8px' }} onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
+            <ChevronRight size={18} />
+          </button>
+        </div>
       </div>
     </div>
   );

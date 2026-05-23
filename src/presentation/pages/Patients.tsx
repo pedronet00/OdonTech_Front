@@ -74,7 +74,9 @@ export function Patients() {
       setIsSaving(true);
       await ApiClient.put(`/pacientes/${editingPatient.id}`, {
         ...editingPatient,
-        sexo: editingPatient.sexo === 'Masculino' ? 0 : 1
+        sexo: editingPatient.sexo === 'Masculino' ? 0 : 1,
+        dataNascimento: (editingPatient.dataNascimento && typeof editingPatient.dataNascimento === 'string' && editingPatient.dataNascimento.trim() !== '') ? editingPatient.dataNascimento : null,
+        cpf: (editingPatient.cpf && typeof editingPatient.cpf === 'string' && editingPatient.cpf.trim() !== '') ? editingPatient.cpf : null
       });
       toast.success('Paciente atualizado com sucesso!');
       await fetchPatients();
@@ -94,7 +96,9 @@ export function Patients() {
       const payload = {
         ...newPatient,
         clinicaId: user.clinica_id,
-        sexo: newPatient.sexo === 'Masculino' ? 0 : 1
+        sexo: newPatient.sexo === 'Masculino' ? 0 : 1,
+        dataNascimento: (newPatient.dataNascimento && typeof newPatient.dataNascimento === 'string' && newPatient.dataNascimento.trim() !== '') ? newPatient.dataNascimento : null,
+        cpf: (newPatient.cpf && typeof newPatient.cpf === 'string' && newPatient.cpf.trim() !== '') ? newPatient.cpf : null
       };
       await ApiClient.post('/pacientes', payload);
       toast.success('Paciente cadastrado com sucesso!');
@@ -230,36 +234,35 @@ export function Patients() {
 
   return (
     <div className="animate-fade-in" onClick={() => activeDropdown && setActiveDropdown(null)}>
-      <div className="flex-row justify-between items-center" style={{ marginBottom: '32px' }}>
+      <div className="flex-row justify-between items-center" style={{ marginBottom: '32px', gap: '16px' }}>
         <div>
-          <h1 style={{ fontSize: '2rem', marginBottom: '8px' }}>Pacientes</h1>
-          <p style={{ color: 'var(--text-muted)' }}>Gerencie os cadastros dos seus pacientes</p>
+          <h1 style={{ fontSize: '1.75rem', marginBottom: '8px' }}>Pacientes</h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Gerencie os cadastros dos seus pacientes</p>
         </div>
         <button className="btn btn-primary" onClick={openCreateModal}>
-          <UserPlus size={18} /> Novo Paciente
+          <UserPlus size={18} /> <span className="mobile-hide">Novo Paciente</span><span className="mobile-only">Novo</span>
         </button>
       </div>
 
       <div className="glass-panel" style={{ padding: '24px' }}>
-        <div style={{ marginBottom: '24px', maxWidth: '400px', position: 'relative' }}>
+        <div style={{ marginBottom: '24px', position: 'relative' }}>
           <Search size={18} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} />
           <input
             type="text"
             className="input-field"
             placeholder="Buscar por nome..."
-            style={{ paddingLeft: '40px' }}
+            style={{ paddingLeft: '40px', width: '100%', maxWidth: '400px' }}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
 
-        <table className="data-table">
+        <table className="data-table responsive-table">
           <thead>
             <tr>
               <th>Nome</th>
               <th>Contato</th>
               <th>CPF</th>
-              <th>Nascimento</th>
               <th>Convênio</th>
               <th style={{ textAlign: 'right' }}>Ações</th>
             </tr>
@@ -275,15 +278,16 @@ export function Patients() {
               </tr>
             ) : filteredPatients.map(patient => (
               <tr key={patient.id}>
-                <td style={{ fontWeight: 500, color: 'var(--text-main)' }}>{patient.nome}</td>
-                <td>
-                  <div>{patient.telefone}</div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{patient.email || 'N/A'}</div>
+                <td data-label="Nome" style={{ fontWeight: 600, color: 'var(--primary)' }}>{patient.nome}</td>
+                <td data-label="Contato">
+                  <div className="flex-col" style={{ alignItems: 'flex-start' }}>
+                    <span>{patient.telefone}</span>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{patient.email || 'N/A'}</span>
+                  </div>
                 </td>
-                <td>{patient.cpf}</td>
-                <td>{new Date(patient.dataNascimento).toLocaleDateString('pt-BR')}</td>
-                <td>{convenioMap[patient.convenio] || 'N/A'}</td>
-                <td style={{ textAlign: 'right' }}>
+                <td data-label="CPF">{patient.cpf || 'Não informado'}</td>
+                <td data-label="Convênio">{convenioMap[patient.convenio] || 'N/A'}</td>
+                <td data-label="Ações" style={{ textAlign: 'right' }}>
                   <div className="dropdown-container">
                     <button
                       className="action-btn"
@@ -338,7 +342,7 @@ export function Patients() {
             ))}
             {filteredPatients.length === 0 && (
               <tr>
-                <td colSpan={6} style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
+                <td colSpan={5} style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
                   Nenhum paciente encontrado.
                 </td>
               </tr>
@@ -361,7 +365,7 @@ export function Patients() {
               <div className="modal-body">
                 <div className="form-group-container">
                   <div className="form-group">
-                    <label className="input-label">Nome Completo</label>
+                    <label className="input-label">Nome Completo <span style={{ color: '#ef4444' }}>*</span></label>
                     <input
                       type="text"
                       className="input-field"
@@ -386,7 +390,7 @@ export function Patients() {
                       />
                     </div>
                     <div className="form-group">
-                      <label className="input-label">Telefone</label>
+                      <label className="input-label">Telefone <span style={{ color: '#ef4444' }}>*</span></label>
                       <input
                         type="text"
                         className="input-field"
@@ -409,7 +413,7 @@ export function Patients() {
                         maxLength={14}
                         value={newPatient.cpf}
                         onChange={e => setNewPatient({ ...newPatient, cpf: applyCpfMask(e.target.value) })}
-                        required
+                      // required
                       />
                     </div>
                     <div className="form-group">
@@ -419,14 +423,14 @@ export function Patients() {
                         className="input-field"
                         value={newPatient.dataNascimento}
                         onChange={e => setNewPatient({ ...newPatient, dataNascimento: e.target.value })}
-                        required
+                      // required
                       />
                     </div>
                   </div>
 
                   <div className="grid-cols-2">
                     <div className="form-group">
-                      <label className="input-label">Sexo</label>
+                      <label className="input-label">Sexo <span style={{ color: '#ef4444' }}>*</span></label>
                       <select
                         className="input-field"
                         value={newPatient.sexo}
@@ -437,7 +441,7 @@ export function Patients() {
                       </select>
                     </div>
                     <div className="form-group">
-                      <label className="input-label">Convênio</label>
+                      <label className="input-label">Convênio <span style={{ color: '#ef4444' }}>*</span></label>
                       <select
                         className="input-field"
                         value={newPatient.convenio}
@@ -478,7 +482,7 @@ export function Patients() {
               <div className="modal-body">
                 <div className="form-group-container">
                   <div className="form-group">
-                    <label className="input-label">Nome Completo</label>
+                    <label className="input-label">Nome Completo <span style={{ color: '#ef4444' }}>*</span></label>
                     <input
                       type="text"
                       className="input-field"
@@ -501,7 +505,7 @@ export function Patients() {
                       />
                     </div>
                     <div className="form-group">
-                      <label className="input-label">Telefone</label>
+                      <label className="input-label">Telefone <span style={{ color: '#ef4444' }}>*</span></label>
                       <input
                         type="text"
                         className="input-field"
@@ -520,9 +524,8 @@ export function Patients() {
                         type="text"
                         className="input-field"
                         maxLength={14}
-                        value={editingPatient.cpf}
+                        value={editingPatient.cpf || ''}
                         onChange={e => setEditingPatient({ ...editingPatient, cpf: applyCpfMask(e.target.value) })}
-                        required
                       />
                     </div>
                     <div className="form-group">
@@ -530,16 +533,15 @@ export function Patients() {
                       <input
                         type="date"
                         className="input-field"
-                        value={editingPatient.dataNascimento.split('T')[0]}
+                        value={editingPatient.dataNascimento ? editingPatient.dataNascimento.split('T')[0] : ''}
                         onChange={e => setEditingPatient({ ...editingPatient, dataNascimento: e.target.value })}
-                        required
                       />
                     </div>
                   </div>
 
                   <div className="grid-cols-2">
                     <div className="form-group">
-                      <label className="input-label">Sexo</label>
+                      <label className="input-label">Sexo <span style={{ color: '#ef4444' }}>*</span></label>
                       <select
                         className="input-field"
                         value={String(editingPatient.sexo) === '0' || editingPatient.sexo === 'Masculino' ? 'Masculino' : 'Feminino'}
@@ -550,7 +552,7 @@ export function Patients() {
                       </select>
                     </div>
                     <div className="form-group">
-                      <label className="input-label">Convênio</label>
+                      <label className="input-label">Convênio <span style={{ color: '#ef4444' }}>*</span></label>
                       <select
                         className="input-field"
                         value={editingPatient.convenio}
@@ -859,8 +861,8 @@ export function Patients() {
                         </td>
                         <td>
                           <span className={`badge ${payment.statusPagamento === 'Pago' ? 'badge-success' :
-                              payment.statusPagamento === 'Cancelado' ? 'badge-danger' :
-                                'badge-warning'
+                            payment.statusPagamento === 'Cancelado' ? 'badge-danger' :
+                              'badge-warning'
                             }`}>
                             {payment.statusPagamento}
                           </span>

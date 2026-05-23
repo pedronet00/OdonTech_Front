@@ -4,6 +4,7 @@ import { FilePlus, Activity, ArrowLeft, Calendar, User, Hash, MoreVertical, Edit
 import { useAuth } from '../../application/contexts/AuthContext';
 import ApiClient from '../../infrastructure/api/apiClient';
 import type { Atendimento, Patient } from '../../domain/models/types';
+import { FormaPagamentoEnum, StatusPagamentoEnum } from '../../domain/models/types';
 import toast from 'react-hot-toast';
 
 export function Records() {
@@ -25,7 +26,10 @@ export function Records() {
     statusAtendimento: 'Pendente',
     dataAtendimento: new Date().toISOString().split('T')[0],
     descricao: '',
-    dente: 0
+    dente: 0,
+    valor: '',
+    statusPagamento: '',
+    formaPagamento: ''
   });
 
   // File management state
@@ -54,11 +58,17 @@ export function Records() {
 
     try {
       setLoading(true);
-      const pData = await ApiClient.get<Patient>(`/atendimentos/paciente/${id}`);
-      setPatient(pData);
-
+      // O endpoint /atendimentos/paciente já retorna o nome do paciente no objeto de atendimento
       const aData = await ApiClient.get<Atendimento[]>(`/atendimentos/paciente/${id}`);
       setAtendimentos(aData);
+      
+      // Se houver atendimentos, podemos extrair informações básicas do paciente de lá para o cabeçalho
+      if (aData && aData.length > 0) {
+        setPatient({ 
+          id: aData[0].pacienteId, 
+          nome: aData[0].nomePaciente 
+        } as Patient);
+      }
     } catch (err: any) {
       toast.error(err.message || 'Não foi possível carregar o prontuário.');
       console.error(err);
@@ -205,6 +215,13 @@ export function Records() {
     e.preventDefault();
     if (!id || !user) return;
 
+    if (newAtendimento.valor) {
+      if (!newAtendimento.formaPagamento || !newAtendimento.statusPagamento) {
+        toast.error('Por favor, preencha a forma de pagamento e o status do pagamento.');
+        return;
+      }
+    }
+
     try {
       setIsSaving(true);
       const payload = {
@@ -214,7 +231,10 @@ export function Records() {
         descricao: newAtendimento.descricao,
         dente: newAtendimento.dente || 0,
         tipoAtendimento: tipoMap[newAtendimento.tipoAtendimento] || 1,
-        statusAtendimento: statusMap[newAtendimento.statusAtendimento] || 1
+        statusAtendimento: statusMap[newAtendimento.statusAtendimento] || 1,
+        valorAtendimento: newAtendimento.valor ? Number(newAtendimento.valor) : null,
+        formaPagamento: newAtendimento.formaPagamento ? Number(newAtendimento.formaPagamento) : null,
+        statusPagamento: newAtendimento.statusPagamento ? Number(newAtendimento.statusPagamento) : null
       };
 
       await ApiClient.post('/atendimentos', payload);
@@ -226,7 +246,10 @@ export function Records() {
         statusAtendimento: 'Pendente',
         dataAtendimento: new Date().toISOString().split('T')[0],
         descricao: '',
-        dente: 0
+        dente: 0,
+        valor: '',
+        statusPagamento: '',
+        formaPagamento: ''
       });
       await fetchData();
     } catch (err: any) {
@@ -270,18 +293,28 @@ export function Records() {
       </button>
 
       <div className="flex-row justify-between items-center" style={{ marginBottom: '24px' }}>
-        <div>
-          <h1 style={{ fontSize: '2rem', marginBottom: '8px' }}>
-            Prontuário
+        <div className="flex-col gap-1">
+          <h1 style={{ fontSize: '1.75rem', margin: 0 }}>
+            Prontuário {patient ? `- ${patient.nome}` : ''}
           </h1>
-          <p style={{ color: 'var(--text-muted)' }}>Histórico clínico e documentos digitais do paciente</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Histórico clínico e documentos digitais do paciente</p>
         </div>
         {activeTab === 'timeline' && (
-          <button className="btn btn-primary" onClick={() => setIsCreating(true)}>
-            <FilePlus size={18} /> Novo Atendimento
-          </button>
+          <div className="mobile-hide">
+            <button className="btn btn-primary" onClick={() => setIsCreating(true)}>
+              <FilePlus size={18} /> Novo Atendimento
+            </button>
+          </div>
         )}
       </div>
+
+      {activeTab === 'timeline' && (
+        <div className="mobile-only" style={{ marginBottom: '16px' }}>
+          <button className="btn btn-primary w-full" onClick={() => setIsCreating(true)}>
+            <FilePlus size={18} /> Novo Atendimento
+          </button>
+        </div>
+      )}
 
       <div className="tabs-container">
         <button
@@ -544,6 +577,59 @@ export function Records() {
                         onChange={e => setNewAtendimento({ ...newAtendimento, dente: parseInt(e.target.value) })}
                         placeholder="Ex: 21"
                       />
+                    </div>
+                  </div>
+
+                  <div style={{ margin: '20px 0 10px 0', borderTop: '1px solid var(--border-subtle)', paddingTop: '16px' }}>
+                    <h3 style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '8px' }}>
+                      Informações Financeiras (Opcional)
+                    </h3>
+                  </div>
+
+                  <div className="grid-cols-3 gap-4" style={{ marginBottom: '16px' }}>
+                    <div className="form-group">
+                      <label className="input-label">Valor (R$)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        className="input-field"
+                        placeholder="0,00"
+                        value={newAtendimento.valor}
+                        onChange={e => setNewAtendimento({ ...newAtendimento, valor: e.target.value })}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="input-label">
+                        Forma de Pagamento {newAtendimento.valor ? <span style={{ color: '#ef4444' }}>*</span> : ''}
+                      </label>
+                      <select
+                        className="input-field"
+                        value={newAtendimento.formaPagamento}
+                        onChange={e => setNewAtendimento({ ...newAtendimento, formaPagamento: e.target.value })}
+                        required={!!newAtendimento.valor}
+                      >
+                        <option value="">Selecione...</option>
+                        <option value={FormaPagamentoEnum.PIX}>PIX</option>
+                        <option value={FormaPagamentoEnum.Debito}>Débito</option>
+                        <option value={FormaPagamentoEnum.Credito}>Crédito</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label className="input-label">
+                        Status do Pagamento {newAtendimento.valor ? <span style={{ color: '#ef4444' }}>*</span> : ''}
+                      </label>
+                      <select
+                        className="input-field"
+                        value={newAtendimento.statusPagamento}
+                        onChange={e => setNewAtendimento({ ...newAtendimento, statusPagamento: e.target.value })}
+                        required={!!newAtendimento.valor}
+                      >
+                        <option value="">Selecione...</option>
+                        <option value={StatusPagamentoEnum.Pendente}>Pendente</option>
+                        <option value={StatusPagamentoEnum.Pago}>Pago</option>
+                        <option value={StatusPagamentoEnum.Cancelado}>Cancelado</option>
+                      </select>
                     </div>
                   </div>
 

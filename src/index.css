@@ -318,13 +318,14 @@ select {
 .dropdown-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  font-size: 0.85rem;
+  gap: 12px;
+  padding: 12px 16px; /* Increased for mobile tapability */
+  font-size: 0.9rem;
   color: var(--text-main);
-  border-radius: 4px;
+  border-radius: 6px;
   width: 100%;
   text-align: left;
+  transition: background var(--transition-fast);
 }
 
 .dropdown-item:hover {
@@ -337,6 +338,85 @@ select {
 
 .dropdown-item.danger:hover {
   background: #fee2e2;
+}
+
+/* Responsive Table utilities */
+@media (max-width: 768px) {
+  .responsive-table {
+    display: block;
+    width: 100%;
+    border: none !important;
+  }
+  
+  .responsive-table thead {
+    display: none; /* Hide headers on mobile */
+  }
+  
+  .responsive-table tbody {
+    display: block;
+    width: 100%;
+  }
+  
+  .responsive-table tr {
+    display: block;
+    margin-bottom: 20px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: var(--shadow-sm);
+  }
+  
+  .responsive-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--bg-surface-hover);
+    text-align: right;
+    min-height: 48px;
+  }
+  
+  .responsive-table td:last-child {
+    border-bottom: none;
+    margin-top: 12px;
+    padding-top: 16px;
+    justify-content: center; /* Center actions */
+    gap: 12px;
+  }
+  
+  .responsive-table td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: var(--text-muted);
+    text-align: left;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    padding-right: 16px;
+  }
+
+  .dropdown-menu {
+    position: fixed;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 90vw;
+    max-width: 300px;
+    background: white;
+    box-shadow: 0 0 0 100vmax rgba(0,0,0,0.5), var(--shadow-lg);
+    border-radius: 16px;
+    padding: 8px;
+  }
+
+  .dropdown-item {
+    padding: 16px;
+    font-size: 1rem;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .dropdown-item:last-child {
+    border-bottom: none;
+  }
 }
 
 /* Modal Styles */
@@ -739,6 +819,24 @@ select {
 
   h1 {
     font-size: 1.5rem !important;
+  }
+
+  .mobile-hide {
+    display: none !important;
+  }
+
+  .mobile-only {
+    display: block !important;
+  }
+
+  .calendar-container {
+    padding-bottom: 80px; /* Space for mobile navigation if any */
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-only {
+    display: none !important;
   }
 }
 
