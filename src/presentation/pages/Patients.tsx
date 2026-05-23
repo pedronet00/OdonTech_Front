@@ -411,9 +411,9 @@ export function Patients() {
                         className="input-field"
                         placeholder="000.000.000-00"
                         maxLength={14}
-                        value={newPatient.cpf}
+                        value={newPatient.cpf || ''}
                         onChange={e => setNewPatient({ ...newPatient, cpf: applyCpfMask(e.target.value) })}
-                      // required
+                        // required
                       />
                     </div>
                     <div className="form-group">
@@ -421,7 +421,7 @@ export function Patients() {
                       <input
                         type="date"
                         className="input-field"
-                        value={newPatient.dataNascimento}
+                         value={newPatient.dataNascimento || ''}
                         onChange={e => setNewPatient({ ...newPatient, dataNascimento: e.target.value })}
                       // required
                       />
