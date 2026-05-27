@@ -1,15 +1,30 @@
+export interface Endereco {
+  logradouro: string;
+  numero: number;
+  complemento: string | null;
+  bairro: string;
+  cidade: string;
+  estado: string;
+  cep: string;
+}
+
 export interface Patient {
   id: string;
   nome: string;
-  email: string;
+  email: string | null;
   cpf: string | null;
   dataNascimento: string | null;
-  sexo: string;
+  sexo: string | number;
   convenio: number;
   telefone: string;
   clinicaId: string;
-  nomeClinica: string;
-  possuiFichaAnamnese: boolean;
+  nomeClinica?: string;
+  possuiFichaAnamnese?: boolean;
+  
+  endereco?: Endereco | null;
+  profissao?: string | null;
+  nomeContatoEmergencia?: string | null;
+  telefoneContatoEmergencia?: string | null;
 }
 
 export interface Atendimento {
@@ -36,37 +51,154 @@ export interface RecordEntry {
   notes: string;
 }
 
+export const CondicoesCardiacas = {
+  Arritimia: 1,
+  MarcaPasso: 2,
+  Stent: 3,
+  ProteseCardiaca: 4,
+  ProlapsoValvulaCardiaca: 5,
+  HistoricoEndocarditeBacteriana: 6,
+  Infarto: 7,
+  InsuficienciaCardiaca: 8,
+  Outro: 9
+} as const;
+export type CondicoesCardiacas = typeof CondicoesCardiacas[keyof typeof CondicoesCardiacas];
+
+export const CondicoesRespiratorias = {
+  Asma: 1,
+  Bronquite: 2,
+  DPOC_Enfisema: 3,
+  Rinite_Sinusite: 4,
+  Tuberculose: 5,
+  Outro: 6
+} as const;
+export type CondicoesRespiratorias = typeof CondicoesRespiratorias[keyof typeof CondicoesRespiratorias];
+
+export const DeficienciaNecessidadeEspecial = {
+  FisicaMotora: 1,
+  Auditiva: 2,
+  Visual: 3,
+  Intelectual: 4,
+  Multipla: 5,
+  Outro: 6
+} as const;
+export type DeficienciaNecessidadeEspecial = typeof DeficienciaNecessidadeEspecial[keyof typeof DeficienciaNecessidadeEspecial];
+
+export const DoencasAlteracoesNoSangue = {
+  Anemia: 1,
+  Hemofilia: 2,
+  Leucemia: 3,
+  AlteracaoPlaquetas: 4,
+  DisturbioCoagulacao: 5,
+  SangramentoFrequente: 6,
+  Outro: 7
+} as const;
+export type DoencasAlteracoesNoSangue = typeof DoencasAlteracoesNoSangue[keyof typeof DoencasAlteracoesNoSangue];
+
+export interface CondicaoCardiacaRequest {
+  condicaoCardiaca: CondicoesCardiacas;
+  outraCondicao: string | null;
+}
+
+export interface CondicaoRespiratoriaRequest {
+  condicaoRespiratoria: CondicoesRespiratorias;
+  outraCondicao: string | null;
+  bombinhaMedicacaoControle: boolean | null;
+}
+
+export interface DeficienciaNecessidadeEspecialRequest {
+  deficienciaNecessidadeEspecial: DeficienciaNecessidadeEspecial;
+  outraDeficiencia: string | null;
+}
+
+export interface DoencaSanguineaRequest {
+  doencaSanguinea: DoencasAlteracoesNoSangue;
+  outrasDoencasSanguineas: string | null;
+  possuiSangramentoProlongado: boolean | null;
+}
+
 export interface FichaAnamnese {
-  id: string;
+  id?: string;
   pacienteId: string;
-  nomePaciente: string;
-  tomandoAlgumMedicamento: boolean;
-  quaisMedicamentos: string | null;
-  possuiAlergias: boolean;
-  quaisAlergias: string | null;
-  tipoPA: string | number; // String from GET, Number for POST
-  temProblemaCardiaco: boolean;
-  qualProblemaCardiaco: string | null;
-  temDiabetes: boolean;
-  tipoSangramento: boolean;
-  fezCirurgiaNosUltimosCincoAnos: boolean;
-  qualCirurgia: string | null;
-  jaTeveReacaoAnestesiaDental: boolean;
-  qualReacaoAnestesia: string | null;
+  nomePaciente?: string;
+
+  apresentaAlgumaCondicaoNaoCitada: boolean;
+  qualCondicaoNaoCitada: string | null;
+
+  confirmouDeclaracao: boolean;
+  dataConfirmacaoDeclaracao: string;
+
+  estaAmamentando: boolean;
+
+  estaGravida: boolean;
+  gravidaHaQuantasSemanas: string | null;
+
   estaSobTratamentoMedico: boolean;
   qualTratamentoMedico: string | null;
-  sofreuOuSofreDeMolestiaGraveNosRins: boolean;
-  sofreuOuSofreDeMolestiaGraveNoFigado: boolean;
-  jaTeveConvulsoes: boolean;
-  jaTomouPenicilina: boolean;
-  portadorDoencaInfectoContagiosa: boolean;
-  qualDoencaInfectoContagiosa: string | null;
-  fazUsoBebidaAlcoolica: boolean;
+
   fazOuFezUsoDrogas: boolean;
   quaisDrogas: string | null;
-  estaGravida: boolean;
-  dataCriacao: string;
-  dataAlteracao: string | null;
+
+  fazUsoBebidaAlcoolica: boolean;
+
+  fezCirurgiaNosUltimosCincoAnos: boolean;
+  qualCirurgia: string | null;
+
+  jaTomouPenicilina: boolean;
+
+  jaTeveConvulsoes: boolean;
+
+  jaTeveReacaoAnestesiaDental: boolean;
+  qualReacaoAnestesia: string | null;
+
+  paControladaComMedicacao: boolean | null;
+
+  portadorDoencaInfectoContagiosa: boolean;
+  qualDoencaInfectoContagiosa: string | null;
+
+  possuiAlergias: boolean;
+  quaisAlergias: string | null;
+
+  possuiDisfuncaoHepatica: boolean;
+  qualDisfuncoesHepaticas: string | null;
+
+  possuiSindromeCondicaoGeneticaNeurologicaAutoimuneMetabolica: boolean;
+  qualSindromeCondicaoGeneticaNeurologicaAutoimuneMetabolica: string | null;
+
+  precisaDeAdaptacao: boolean;
+  qualAdaptacao: string | null;
+
+  sofreuOuSofreDeMolestiaGraveNoFigado: boolean;
+
+  sofreuOuSofreDeMolestiaGraveNosRins: boolean;
+
+  temDiabetes: boolean;
+
+  temProblemaCardiaco: boolean;
+  qualProblemaCardiaco: string | null;
+
+  tipoSangramento: boolean;
+
+  tipoPA: string | number;
+
+  tomandoAlgumMedicamento: boolean;
+  quaisMedicamentos: string | null;
+
+  bombinhaMedicacaoControle: boolean | null;
+  possuiSangramentoProlongado: boolean | null;
+  outrasCondicoesCardiacas: string | null;
+  outrasCondicoesRespiratorias: string | null;
+  outrasDeficienciasNecessidades: string | null;
+  outrasDoencasSanguineas: string | null;
+
+  // coleções auxiliares
+  condicoesCardiacas: CondicaoCardiacaRequest[];
+  condicoesRespiratorias: CondicaoRespiratoriaRequest[];
+  deficiencias: DeficienciaNecessidadeEspecialRequest[];
+  doencasSanguineas: DoencaSanguineaRequest[];
+
+  dataCriacao?: string;
+  dataAlteracao?: string | null;
 }
 
 export const FormaPagamentoEnum = {

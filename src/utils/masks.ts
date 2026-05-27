@@ -22,3 +22,10 @@ export const applyCroMask = (value: string) => {
     .replace(/[^A-Z0-9-]/g, '')
     .slice(0, 15); // limit length
 };
+
+export const applyCepMask = (value: string) => {
+  return value
+    .replace(/\D/g, '') // remove every non-number character
+    .replace(/(\d{5})(\d)/, '$1-$2') // insert dash after 5th digit
+    .replace(/(-\d{3})\d+?$/, '$1'); // limit length to 8 digits
+};

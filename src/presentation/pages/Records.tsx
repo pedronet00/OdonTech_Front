@@ -53,22 +53,34 @@ export function Records() {
     'Procedimento': 5
   };
 
+  const convenioMap: { [key: number]: string } = {
+    1: 'Unimed', 2: 'Bradesco', 3: 'Amil', 4: 'SulAmerica', 5: 'OesteSaude',
+    6: 'Athia', 7: 'SUS', 8: 'Particular', 9: 'Outros'
+  };
+
+  const calculateAge = (birthDateString: string | null) => {
+    if (!birthDateString) return '';
+    const birthDate = new Date(birthDateString);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return `(${age} anos)`;
+  };
+
   const fetchData = async () => {
     if (!id) return;
 
     try {
       setLoading(true);
-      // O endpoint /atendimentos/paciente já retorna o nome do paciente no objeto de atendimento
-      const aData = await ApiClient.get<Atendimento[]>(`/atendimentos/paciente/${id}`);
+      const [aData, pData] = await Promise.all([
+        ApiClient.get<Atendimento[]>(`/atendimentos/paciente/${id}`),
+        ApiClient.get<Patient>(`/pacientes/${id}`)
+      ]);
       setAtendimentos(aData);
-      
-      // Se houver atendimentos, podemos extrair informações básicas do paciente de lá para o cabeçalho
-      if (aData && aData.length > 0) {
-        setPatient({ 
-          id: aData[0].pacienteId, 
-          nome: aData[0].nomePaciente 
-        } as Patient);
-      }
+      setPatient(pData);
     } catch (err: any) {
       toast.error(err.message || 'Não foi possível carregar o prontuário.');
       console.error(err);
@@ -313,6 +325,84 @@ export function Records() {
           <button className="btn btn-primary w-full" onClick={() => setIsCreating(true)}>
             <FilePlus size={18} /> Novo Atendimento
           </button>
+        </div>
+      )}
+
+      {patient && (
+        <div className="glass-panel" style={{ padding: '20px', marginBottom: '24px', position: 'relative', overflow: 'hidden' }}>
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            width: '200px',
+            height: '100%',
+            background: 'linear-gradient(135deg, rgba(2, 132, 199, 0.03) 0%, rgba(2, 132, 199, 0.08) 100%)',
+            pointerEvents: 'none',
+            zIndex: 0
+          }} />
+          
+          <div className="flex-row items-start justify-between" style={{ position: 'relative', zIndex: 1, flexWrap: 'wrap', gap: '20px' }}>
+            <div className="flex-row gap-4" style={{ flexWrap: 'wrap' }}>
+              <div style={{
+                background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%)',
+                color: 'white',
+                width: '64px',
+                height: '64px',
+                borderRadius: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.5rem',
+                fontWeight: 700,
+                boxShadow: '0 4px 12px rgba(2, 132, 199, 0.2)'
+              }}>
+                {patient.nome ? patient.nome.charAt(0).toUpperCase() : 'P'}
+              </div>
+              
+              <div className="flex-col gap-1">
+                <div className="flex-row items-center gap-2" style={{ flexWrap: 'wrap' }}>
+                  <h2 style={{ fontSize: '1.4rem', fontWeight: 700, margin: 0 }}>{patient.nome}</h2>
+                  <span className="badge" style={{ background: 'rgba(2, 132, 199, 0.1)', color: 'var(--primary)', border: '1px solid rgba(2, 132, 199, 0.2)', padding: '2px 8px', borderRadius: '6px', fontSize: '0.75rem' }}>
+                    {convenioMap[patient.convenio] || 'Outros'}
+                  </span>
+                </div>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '8px 24px', marginTop: '8px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                  <div><strong>CPF:</strong> {patient.cpf || 'Não informado'}</div>
+                  {patient.dataNascimento && (
+                    <div>
+                      <strong>Nascimento:</strong> {new Date(patient.dataNascimento).toLocaleDateString('pt-BR')} {calculateAge(patient.dataNascimento)}
+                    </div>
+                  )}
+                  <div><strong>Telefone:</strong> {patient.telefone || 'Não informado'}</div>
+                  {patient.email && <div><strong>E-mail:</strong> {patient.email}</div>}
+                  {patient.profissao && <div><strong>Profissão:</strong> {patient.profissao}</div>}
+                  <div><strong>Sexo:</strong> {patient.sexo === 0 || patient.sexo === 'Masculino' ? 'Masculino' : 'Feminino'}</div>
+                </div>
+              </div>
+            </div>
+
+            {(patient.nomeContatoEmergencia || patient.endereco) && (
+              <div style={{ minWidth: '250px', fontSize: '0.85rem', color: 'var(--text-muted)', borderLeft: '1px solid var(--border-subtle)', paddingLeft: '20px' }}>
+                {patient.nomeContatoEmergencia && (
+                  <div style={{ marginBottom: '12px' }}>
+                    <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '4px' }}>Contato de Emergência</div>
+                    <div>{patient.nomeContatoEmergencia} {patient.telefoneContatoEmergencia && `(${patient.telefoneContatoEmergencia})`}</div>
+                  </div>
+                )}
+                {patient.endereco && (
+                  <div>
+                    <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '4px' }}>Endereço Residencial</div>
+                    <div style={{ lineHeight: '1.4' }}>
+                      {patient.endereco.logradouro}, {patient.endereco.numero}{patient.endereco.complemento && ` - ${patient.endereco.complemento}`}<br />
+                      {patient.endereco.bairro} - {patient.endereco.cidade}/{patient.endereco.estado}<br />
+                      CEP: {patient.endereco.cep}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -785,6 +875,34 @@ export function Records() {
                 <span className="print-label">ID do Atendimento</span>
                 <span className="print-value">{printingAtendimento.id.toUpperCase()}</span>
               </div>
+              {patient?.profissao && (
+                <div className="print-field">
+                  <span className="print-label">Profissão</span>
+                  <span className="print-value">{patient.profissao}</span>
+                </div>
+              )}
+              {patient?.telefone && (
+                <div className="print-field">
+                  <span className="print-label">Telefone</span>
+                  <span className="print-value">{patient.telefone}</span>
+                </div>
+              )}
+              {patient?.nomeContatoEmergencia && (
+                <div className="print-field">
+                  <span className="print-label">Contato de Emergência</span>
+                  <span className="print-value">
+                    {patient.nomeContatoEmergencia} {patient.telefoneContatoEmergencia && `(${patient.telefoneContatoEmergencia})`}
+                  </span>
+                </div>
+              )}
+              {patient?.endereco && (
+                <div className="print-field" style={{ gridColumn: 'span 2' }}>
+                  <span className="print-label">Endereço Residencial</span>
+                  <span className="print-value">
+                    {`${patient.endereco.logradouro}, ${patient.endereco.numero}${patient.endereco.complemento ? ` (${patient.endereco.complemento})` : ''} - ${patient.endereco.bairro}, ${patient.endereco.cidade}/${patient.endereco.estado} - CEP: ${patient.endereco.cep}`}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 

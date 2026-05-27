@@ -670,6 +670,82 @@ select {
   width: 100%;
 }
 
+/* Anamnese specific tabs */
+.anamnese-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 8px;
+  overflow-x: auto;
+}
+
+.anamnese-tab-btn {
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.anamnese-tab-btn:hover {
+  background: var(--bg-surface-hover);
+  color: var(--text-main);
+}
+
+.anamnese-tab-btn.active {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--primary);
+  border-color: rgba(59, 130, 246, 0.2);
+}
+
+/* Neutral active toggle button */
+.toggle-btn.active.neutral {
+  background: var(--border-subtle);
+  color: var(--text-main);
+}
+
+/* Nested card checkbox layouts */
+.sub-conditions-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--bg-surface);
+  border-radius: 8px;
+  border: 1px dashed var(--border-subtle);
+  margin-top: 12px;
+}
+
+.sub-condition-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--bg-main);
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle);
+  width: 100%;
+}
+
+.sub-condition-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sub-condition-body {
+  padding-left: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 /* Tab Styles */
 .tabs-container {
   display: flex;
