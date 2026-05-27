@@ -426,7 +426,19 @@ export function Patients() {
       const payload = {
         ...fichaAnamnese,
         tipoPA: tipoPANum,
-        dataConfirmacaoDeclaracao: new Date().toISOString()
+        dataConfirmacaoDeclaracao: new Date().toISOString(),
+        condicoesCardiacas: (fichaAnamnese.condicoesCardiacas || []).map(c => ({
+          condicaoCardiaca: c.condicaoCardiaca
+        })),
+        condicoesRespiratorias: (fichaAnamnese.condicoesRespiratorias || []).map(r => ({
+          condicaoRespiratoria: r.condicaoRespiratoria
+        })),
+        deficiencias: (fichaAnamnese.deficiencias || []).map(d => ({
+          deficienciaNecessidadeEspecial: d.deficienciaNecessidadeEspecial
+        })),
+        doencasSanguineas: (fichaAnamnese.doencasSanguineas || []).map(s => ({
+          doencaSanguinea: s.doencaSanguinea
+        }))
       };
       await ApiClient.post('/fichas-anamnese', payload);
       toast.success('Ficha salva com sucesso!');
@@ -443,20 +455,20 @@ export function Patients() {
     let newList = [...fichaAnamnese.condicoesCardiacas];
     if (checked) {
       if (!newList.some(c => c.condicaoCardiaca === condicao)) {
-        newList.push({ condicaoCardiaca: condicao, outraCondicao: null });
+        newList.push({ condicaoCardiaca: condicao });
       }
     } else {
       newList = newList.filter(c => c.condicaoCardiaca !== condicao);
+      if (condicao === 9) {
+        fichaAnamnese.outrasCondicoesCardiacas = null;
+      }
     }
     setFichaAnamnese({ ...fichaAnamnese, condicoesCardiacas: newList });
   };
 
   const handleCardiacOutraChange = (text: string) => {
     if (!fichaAnamnese) return;
-    const newList = fichaAnamnese.condicoesCardiacas.map(c => 
-      c.condicaoCardiaca === 9 ? { ...c, outraCondicao: text || null } : c
-    );
-    setFichaAnamnese({ ...fichaAnamnese, condicoesCardiacas: newList });
+    setFichaAnamnese({ ...fichaAnamnese, outrasCondicoesCardiacas: text || null });
   };
 
   const handleRespiratoriaChange = (condicao: CondicoesRespiratorias, checked: boolean) => {
@@ -464,20 +476,20 @@ export function Patients() {
     let newList = [...fichaAnamnese.condicoesRespiratorias];
     if (checked) {
       if (!newList.some(r => r.condicaoRespiratoria === condicao)) {
-        newList.push({ condicaoRespiratoria: condicao, outraCondicao: null, bombinhaMedicacaoControle: null });
+        newList.push({ condicaoRespiratoria: condicao });
       }
     } else {
       newList = newList.filter(r => r.condicaoRespiratoria !== condicao);
+      if (condicao === 6) {
+        fichaAnamnese.outrasCondicoesRespiratorias = null;
+      }
     }
     setFichaAnamnese({ ...fichaAnamnese, condicoesRespiratorias: newList });
   };
 
   const handleRespiratoriaOutraChange = (text: string) => {
     if (!fichaAnamnese) return;
-    const newList = fichaAnamnese.condicoesRespiratorias.map(r => 
-      r.condicaoRespiratoria === 6 ? { ...r, outraCondicao: text || null } : r
-    );
-    setFichaAnamnese({ ...fichaAnamnese, condicoesRespiratorias: newList });
+    setFichaAnamnese({ ...fichaAnamnese, outrasCondicoesRespiratorias: text || null });
   };
 
   const handleDeficienciaChange = (def: DeficienciaNecessidadeEspecial, checked: boolean) => {
@@ -485,20 +497,20 @@ export function Patients() {
     let newList = [...fichaAnamnese.deficiencias];
     if (checked) {
       if (!newList.some(d => d.deficienciaNecessidadeEspecial === def)) {
-        newList.push({ deficienciaNecessidadeEspecial: def, outraDeficiencia: null });
+        newList.push({ deficienciaNecessidadeEspecial: def });
       }
     } else {
       newList = newList.filter(d => d.deficienciaNecessidadeEspecial !== def);
+      if (def === 6) {
+        fichaAnamnese.outrasDeficienciasNecessidades = null;
+      }
     }
     setFichaAnamnese({ ...fichaAnamnese, deficiencias: newList });
   };
 
   const handleDeficienciaOutraChange = (text: string) => {
     if (!fichaAnamnese) return;
-    const newList = fichaAnamnese.deficiencias.map(d => 
-      d.deficienciaNecessidadeEspecial === 6 ? { ...d, outraDeficiencia: text || null } : d
-    );
-    setFichaAnamnese({ ...fichaAnamnese, deficiencias: newList });
+    setFichaAnamnese({ ...fichaAnamnese, outrasDeficienciasNecessidades: text || null });
   };
 
   const handleSanguineaChange = (doenca: DoencasAlteracoesNoSangue, checked: boolean) => {
@@ -506,20 +518,20 @@ export function Patients() {
     let newList = [...fichaAnamnese.doencasSanguineas];
     if (checked) {
       if (!newList.some(s => s.doencaSanguinea === doenca)) {
-        newList.push({ doencaSanguinea: doenca, outrasDoencasSanguineas: null, possuiSangramentoProlongado: null });
+        newList.push({ doencaSanguinea: doenca });
       }
     } else {
       newList = newList.filter(s => s.doencaSanguinea !== doenca);
+      if (doenca === 7) {
+        fichaAnamnese.outrasDoencasSanguineas = null;
+      }
     }
     setFichaAnamnese({ ...fichaAnamnese, doencasSanguineas: newList });
   };
 
   const handleSanguineaOutraChange = (text: string) => {
     if (!fichaAnamnese) return;
-    const newList = fichaAnamnese.doencasSanguineas.map(s => 
-      s.doencaSanguinea === 7 ? { ...s, outrasDoencasSanguineas: text || null } : s
-    );
-    setFichaAnamnese({ ...fichaAnamnese, doencasSanguineas: newList });
+    setFichaAnamnese({ ...fichaAnamnese, outrasDoencasSanguineas: text || null });
   };
 
   const fetchPayments = async (pacienteId: string) => {
@@ -1542,7 +1554,7 @@ export function Patients() {
                                           type="text"
                                           className="input-field"
                                           placeholder="Especificar outra condição"
-                                          value={fichaAnamnese.condicoesCardiacas.find(c => c.condicaoCardiaca === 9)?.outraCondicao || ''}
+                                          value={fichaAnamnese.outrasCondicoesCardiacas || ''}
                                           onChange={e => handleCardiacOutraChange(e.target.value)}
                                           required
                                         />
@@ -1580,7 +1592,6 @@ export function Patients() {
                               { id: 7, label: 'Outro' }
                             ].map(opt => {
                               const isChecked = fichaAnamnese.doencasSanguineas.some(s => s.doencaSanguinea === opt.id);
-                              const found = fichaAnamnese.doencasSanguineas.find(s => s.doencaSanguinea === opt.id);
                               return (
                                 <div key={opt.id} className="sub-condition-row">
                                   <div className="sub-condition-header">
@@ -1598,7 +1609,7 @@ export function Patients() {
                                         type="text"
                                         className="input-field"
                                         placeholder="Especificar outra alteração"
-                                        value={found?.outrasDoencasSanguineas || ''}
+                                        value={fichaAnamnese.outrasDoencasSanguineas || ''}
                                         onChange={e => handleSanguineaOutraChange(e.target.value)}
                                         required
                                       />
@@ -1633,7 +1644,7 @@ export function Patients() {
                         <div className="toggle-group">
                           <button type="button" className={`toggle-btn ${fichaAnamnese.condicoesRespiratorias.length > 0 ? 'active yes' : ''}`} onClick={() => {
                             if (fichaAnamnese.condicoesRespiratorias.length === 0) {
-                              setFichaAnamnese({ ...fichaAnamnese, condicoesRespiratorias: [{ condicaoRespiratoria: 1, outraCondicao: null }] });
+                              setFichaAnamnese({ ...fichaAnamnese, condicoesRespiratorias: [{ condicaoRespiratoria: 1 }] });
                             }
                           }}>Sim</button>
                           <button type="button" className={`toggle-btn ${fichaAnamnese.condicoesRespiratorias.length === 0 ? 'active no' : ''}`} onClick={() => setFichaAnamnese({ ...fichaAnamnese, condicoesRespiratorias: [], bombinhaMedicacaoControle: null })}>Não</button>
@@ -1652,7 +1663,6 @@ export function Patients() {
                               { id: 6, label: 'Outro' }
                             ].map(opt => {
                               const isChecked = fichaAnamnese.condicoesRespiratorias.some(r => r.condicaoRespiratoria === opt.id);
-                              const found = fichaAnamnese.condicoesRespiratorias.find(r => r.condicaoRespiratoria === opt.id);
                               return (
                                 <div key={opt.id} className="sub-condition-row">
                                   <div className="sub-condition-header">
@@ -1670,7 +1680,7 @@ export function Patients() {
                                         type="text"
                                         className="input-field"
                                         placeholder="Especificar outra condição"
-                                        value={found?.outraCondicao || ''}
+                                        value={fichaAnamnese.outrasCondicoesRespiratorias || ''}
                                         onChange={e => handleRespiratoriaOutraChange(e.target.value)}
                                         required
                                       />
@@ -1699,7 +1709,7 @@ export function Patients() {
                         <div className="toggle-group">
                           <button type="button" className={`toggle-btn ${fichaAnamnese.deficiencias.length > 0 ? 'active yes' : ''}`} onClick={() => {
                             if (fichaAnamnese.deficiencias.length === 0) {
-                              setFichaAnamnese({ ...fichaAnamnese, deficiencias: [{ deficienciaNecessidadeEspecial: 1, outraDeficiencia: null }] });
+                              setFichaAnamnese({ ...fichaAnamnese, deficiencias: [{ deficienciaNecessidadeEspecial: 1 }] });
                             }
                           }}>Sim</button>
                           <button type="button" className={`toggle-btn ${fichaAnamnese.deficiencias.length === 0 ? 'active no' : ''}`} onClick={() => setFichaAnamnese({ ...fichaAnamnese, deficiencias: [] })}>Não</button>
@@ -1735,7 +1745,7 @@ export function Patients() {
                                         type="text"
                                         className="input-field"
                                         placeholder="Especificar outra deficiência"
-                                        value={fichaAnamnese.deficiencias.find(d => d.deficienciaNecessidadeEspecial === 6)?.outraDeficiencia || ''}
+                                        value={fichaAnamnese.outrasDeficienciasNecessidades || ''}
                                         onChange={e => handleDeficienciaOutraChange(e.target.value)}
                                         required
                                       />

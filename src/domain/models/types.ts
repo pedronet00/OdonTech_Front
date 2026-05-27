@@ -97,24 +97,18 @@ export type DoencasAlteracoesNoSangue = typeof DoencasAlteracoesNoSangue[keyof t
 
 export interface CondicaoCardiacaRequest {
   condicaoCardiaca: CondicoesCardiacas;
-  outraCondicao: string | null;
 }
 
 export interface CondicaoRespiratoriaRequest {
   condicaoRespiratoria: CondicoesRespiratorias;
-  outraCondicao: string | null;
-  bombinhaMedicacaoControle?: boolean | null;
 }
 
 export interface DeficienciaNecessidadeEspecialRequest {
   deficienciaNecessidadeEspecial: DeficienciaNecessidadeEspecial;
-  outraDeficiencia: string | null;
 }
 
 export interface DoencaSanguineaRequest {
   doencaSanguinea: DoencasAlteracoesNoSangue;
-  outrasDoencasSanguineas: string | null;
-  possuiSangramentoProlongado?: boolean | null;
 }
 
 export interface FichaAnamnese {
