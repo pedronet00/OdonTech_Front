@@ -103,7 +103,7 @@ export interface CondicaoCardiacaRequest {
 export interface CondicaoRespiratoriaRequest {
   condicaoRespiratoria: CondicoesRespiratorias;
   outraCondicao: string | null;
-  bombinhaMedicacaoControle: boolean | null;
+  bombinhaMedicacaoControle?: boolean | null;
 }
 
 export interface DeficienciaNecessidadeEspecialRequest {
@@ -114,7 +114,7 @@ export interface DeficienciaNecessidadeEspecialRequest {
 export interface DoencaSanguineaRequest {
   doencaSanguinea: DoencasAlteracoesNoSangue;
   outrasDoencasSanguineas: string | null;
-  possuiSangramentoProlongado: boolean | null;
+  possuiSangramentoProlongado?: boolean | null;
 }
 
 export interface FichaAnamnese {

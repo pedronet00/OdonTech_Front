@@ -471,14 +471,6 @@ export function Patients() {
     setFichaAnamnese({ ...fichaAnamnese, condicoesRespiratorias: newList });
   };
 
-  const handleRespiratoriaBombinhaChange = (condicao: CondicoesRespiratorias, value: boolean | null) => {
-    if (!fichaAnamnese) return;
-    const newList = fichaAnamnese.condicoesRespiratorias.map(r => 
-      r.condicaoRespiratoria === condicao ? { ...r, bombinhaMedicacaoControle: value } : r
-    );
-    setFichaAnamnese({ ...fichaAnamnese, condicoesRespiratorias: newList });
-  };
-
   const handleDeficienciaChange = (def: DeficienciaNecessidadeEspecial, checked: boolean) => {
     if (!fichaAnamnese) return;
     let newList = [...fichaAnamnese.deficiencias];
@@ -517,14 +509,6 @@ export function Patients() {
     if (!fichaAnamnese) return;
     const newList = fichaAnamnese.doencasSanguineas.map(s => 
       s.doencaSanguinea === 7 ? { ...s, outrasDoencasSanguineas: text || null } : s
-    );
-    setFichaAnamnese({ ...fichaAnamnese, doencasSanguineas: newList });
-  };
-
-  const handleSanguineaSangramentoChange = (doenca: DoencasAlteracoesNoSangue, value: boolean | null) => {
-    if (!fichaAnamnese) return;
-    const newList = fichaAnamnese.doencasSanguineas.map(s => 
-      s.doencaSanguinea === doenca ? { ...s, possuiSangramentoProlongado: value } : s
     );
     setFichaAnamnese({ ...fichaAnamnese, doencasSanguineas: newList });
   };
