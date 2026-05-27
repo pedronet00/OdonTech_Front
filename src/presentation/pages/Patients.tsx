@@ -12,7 +12,7 @@ const getDeficienciaId = (val: any): number => {
   if (val === null || val === undefined) return 0;
   if (typeof val === 'number') return val;
   if (!isNaN(Number(val))) return Number(val);
-  
+
   const valStr = String(val).trim().toLowerCase();
   const mapping: { [key: string]: number } = {
     'fisicamotora': 1,
@@ -33,7 +33,7 @@ const getCondicaoCardiacaId = (val: any): number => {
   if (val === null || val === undefined) return 0;
   if (typeof val === 'number') return val;
   if (!isNaN(Number(val))) return Number(val);
-  
+
   const valStr = String(val).trim().toLowerCase();
   const mapping: { [key: string]: number } = {
     'arritimia': 1,
@@ -64,7 +64,7 @@ const getCondicaoRespiratoriaId = (val: any): number => {
   if (val === null || val === undefined) return 0;
   if (typeof val === 'number') return val;
   if (!isNaN(Number(val))) return Number(val);
-  
+
   const valStr = String(val).trim().toLowerCase();
   const mapping: { [key: string]: number } = {
     'asma': 1,
@@ -86,7 +86,7 @@ const getDoencaSanguineaId = (val: any): number => {
   if (val === null || val === undefined) return 0;
   if (typeof val === 'number') return val;
   if (!isNaN(Number(val))) return Number(val);
-  
+
   const valStr = String(val).trim().toLowerCase();
   const mapping: { [key: string]: number } = {
     'anemia': 1,
@@ -198,9 +198,9 @@ export function Patients() {
     }
 
     const UfsValidas = new Set([
-      "AC","AL","AM","AP","BA","CE","DF","ES","GO",
-      "MA","MG","MS","MT","PA","PB","PE","PI","PR",
-      "RJ","RN","RO","RR","RS","SC","SE","SP","TO"
+      "AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO",
+      "MA", "MG", "MS", "MT", "PA", "PB", "PE", "PI", "PR",
+      "RJ", "RN", "RO", "RR", "RS", "SC", "SE", "SP", "TO"
     ]);
     if (!UfsValidas.has(estado)) {
       toast.error(`Estado (UF) inválido: '${endereco.estado || ''}'.`);
@@ -415,7 +415,7 @@ export function Patients() {
     try {
       setIsSaving(true);
       const paMapping: { [key: string]: number } = { 'Normal': 0, 'Alta': 1, 'Baixa': 2 };
-      
+
       let tipoPANum = 0;
       if (typeof fichaAnamnese.tipoPA === 'number') {
         tipoPANum = fichaAnamnese.tipoPA;
@@ -807,7 +807,7 @@ export function Patients() {
                         maxLength={14}
                         value={newPatient.cpf || ''}
                         onChange={e => setNewPatient({ ...newPatient, cpf: applyCpfMask(e.target.value) })}
-                        // required
+                      // required
                       />
                     </div>
                     <div className="form-group">
@@ -815,7 +815,7 @@ export function Patients() {
                       <input
                         type="date"
                         className="input-field"
-                         value={newPatient.dataNascimento || ''}
+                        value={newPatient.dataNascimento || ''}
                         onChange={e => setNewPatient({ ...newPatient, dataNascimento: e.target.value })}
                       // required
                       />
@@ -1237,7 +1237,7 @@ export function Patients() {
 
             <form onSubmit={handleSaveAnamnese}>
               <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-                
+
                 {/* Tabs */}
                 <div className="anamnese-tabs">
                   <button type="button" className={`anamnese-tab-btn ${anamneseActiveTab === 'geral' ? 'active' : ''}`} onClick={() => setAnamneseActiveTab('geral')}>Histórico Geral</button>
@@ -1253,7 +1253,7 @@ export function Patients() {
                     {/* Tomando Medicamento */}
                     <div className="anamnese-question-row">
                       <div className="anamnese-controls">
-                        <span className="anamnese-label">Está tomando algum medicamento?</span>
+                        <span className="anamnese-label">Faz uso contínuo de medicamentos?</span>
                         <div className="toggle-group">
                           <button type="button" className={`toggle-btn ${fichaAnamnese.tomandoAlgumMedicamento ? 'active yes' : ''}`} onClick={() => setFichaAnamnese({ ...fichaAnamnese, tomandoAlgumMedicamento: true })}>Sim</button>
                           <button type="button" className={`toggle-btn ${!fichaAnamnese.tomandoAlgumMedicamento ? 'active no' : ''}`} onClick={() => setFichaAnamnese({ ...fichaAnamnese, tomandoAlgumMedicamento: false, quaisMedicamentos: null })}>Não</button>
@@ -1451,7 +1451,7 @@ export function Patients() {
                     {/* Doença Infectocontagiosa */}
                     <div className="anamnese-question-row">
                       <div className="anamnese-controls">
-                        <span className="anamnese-label">É portador de doença infectocontagiosa?</span>
+                        <span className="anamnese-label">É portador de doença infectocontagiosa ou infecções sexualmente transmissíveis?</span>
                         <div className="toggle-group">
                           <button type="button" className={`toggle-btn ${fichaAnamnese.portadorDoencaInfectoContagiosa ? 'active yes' : ''}`} onClick={() => setFichaAnamnese({ ...fichaAnamnese, portadorDoencaInfectoContagiosa: true })}>Sim</button>
                           <button type="button" className={`toggle-btn ${!fichaAnamnese.portadorDoencaInfectoContagiosa ? 'active no' : ''}`} onClick={() => setFichaAnamnese({ ...fichaAnamnese, portadorDoencaInfectoContagiosa: false, qualDoencaInfectoContagiosa: null })}>Não</button>
@@ -1521,7 +1521,7 @@ export function Patients() {
                       {fichaAnamnese.temProblemaCardiaco && (
                         <div className="flex-col gap-2" style={{ marginTop: '8px', width: '100%' }}>
                           <input type="text" className="input-field" placeholder="Descreva o problema principal" value={fichaAnamnese.qualProblemaCardiaco || ''} onChange={e => setFichaAnamnese({ ...fichaAnamnese, qualProblemaCardiaco: e.target.value })} required />
-                          
+
                           <div className="sub-conditions-section">
                             <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)' }}>Selecione todas as condições cardíacas aplicáveis:</span>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px', marginTop: '8px' }}>
@@ -1572,7 +1572,7 @@ export function Patients() {
                     {/* Sanguine Section */}
                     <div className="anamnese-question-row">
                       <div className="anamnese-controls">
-                        <span className="anamnese-label" style={{ fontWeight: 600 }}>Apresenta facilidade de sangramento excessivo?</span>
+                        <span className="anamnese-label" style={{ fontWeight: 600 }}>Possui problemas sanguíneos?</span>
                         <div className="toggle-group">
                           <button type="button" className={`toggle-btn ${fichaAnamnese.tipoSangramento ? 'active yes' : ''}`} onClick={() => setFichaAnamnese({ ...fichaAnamnese, tipoSangramento: true })}>Sim</button>
                           <button type="button" className={`toggle-btn ${!fichaAnamnese.tipoSangramento ? 'active no' : ''}`} onClick={() => setFichaAnamnese({ ...fichaAnamnese, tipoSangramento: false, doencasSanguineas: [], possuiSangramentoProlongado: null })}>Não</button>
@@ -1621,7 +1621,7 @@ export function Patients() {
                           </div>
 
                           <div className="flex-row items-center justify-between" style={{ marginTop: '16px', borderTop: '1px solid var(--border)', paddingTop: '16px', gap: '8px' }}>
-                            <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)' }}>Apresenta sangramento prolongado ou de difícil controle?</span>
+                            <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)' }}>Apresenta sangramento prolongado após cortes, cirurgias ou extrações dentárias?</span>
                             <div className="toggle-group">
                               <button type="button" className={`toggle-btn ${fichaAnamnese.possuiSangramentoProlongado === true ? 'active yes' : ''}`} onClick={() => setFichaAnamnese({ ...fichaAnamnese, possuiSangramentoProlongado: true })}>Sim</button>
                               <button type="button" className={`toggle-btn ${fichaAnamnese.possuiSangramentoProlongado === false ? 'active no' : ''}`} onClick={() => setFichaAnamnese({ ...fichaAnamnese, possuiSangramentoProlongado: false })}>Não</button>
@@ -1760,36 +1760,36 @@ export function Patients() {
                     </div>
 
                     {/* Gestação (Condicional ao sexo feminino) */}
-                    {(patients.find(p => p.id === fichaAnamnese.pacienteId)?.sexo === 'Feminino' || 
+                    {(patients.find(p => p.id === fichaAnamnese.pacienteId)?.sexo === 'Feminino' ||
                       String(patients.find(p => p.id === fichaAnamnese.pacienteId)?.sexo) === '1') && (
-                      <div className="glass-panel" style={{ padding: '20px', background: 'rgba(236, 72, 153, 0.03)', border: '1px solid rgba(236, 72, 153, 0.15)', borderRadius: '12px' }}>
-                        <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#db2777', display: 'block', marginBottom: '16px' }}>Gestação & Lactação</span>
-                        <div className="grid-cols-2" style={{ gap: '20px' }}>
-                          <div className="anamnese-question-row" style={{ background: 'var(--bg-main)' }}>
-                            <div className="anamnese-controls">
-                              <span className="anamnese-label">Está grávida?</span>
-                              <div className="toggle-group">
-                                <button type="button" className={`toggle-btn ${fichaAnamnese.estaGravida ? 'active yes' : ''}`} onClick={() => setFichaAnamnese({ ...fichaAnamnese, estaGravida: true })}>Sim</button>
-                                <button type="button" className={`toggle-btn ${!fichaAnamnese.estaGravida ? 'active no' : ''}`} onClick={() => setFichaAnamnese({ ...fichaAnamnese, estaGravida: false, gravidaHaQuantasSemanas: null })}>Não</button>
+                        <div className="glass-panel" style={{ padding: '20px', background: 'rgba(236, 72, 153, 0.03)', border: '1px solid rgba(236, 72, 153, 0.15)', borderRadius: '12px' }}>
+                          <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#db2777', display: 'block', marginBottom: '16px' }}>Gestação & Lactação</span>
+                          <div className="grid-cols-2" style={{ gap: '20px' }}>
+                            <div className="anamnese-question-row" style={{ background: 'var(--bg-main)' }}>
+                              <div className="anamnese-controls">
+                                <span className="anamnese-label">Está grávida/há possibilidade de gravidez?</span>
+                                <div className="toggle-group">
+                                  <button type="button" className={`toggle-btn ${fichaAnamnese.estaGravida ? 'active yes' : ''}`} onClick={() => setFichaAnamnese({ ...fichaAnamnese, estaGravida: true })}>Sim</button>
+                                  <button type="button" className={`toggle-btn ${!fichaAnamnese.estaGravida ? 'active no' : ''}`} onClick={() => setFichaAnamnese({ ...fichaAnamnese, estaGravida: false, gravidaHaQuantasSemanas: null })}>Não</button>
+                                </div>
                               </div>
+                              {fichaAnamnese.estaGravida && (
+                                <input type="text" className="input-field anamnese-details-input" placeholder="Grávida há quantas semanas?" value={fichaAnamnese.gravidaHaQuantasSemanas || ''} onChange={e => setFichaAnamnese({ ...fichaAnamnese, gravidaHaQuantasSemanas: e.target.value })} required />
+                              )}
                             </div>
-                            {fichaAnamnese.estaGravida && (
-                              <input type="text" className="input-field anamnese-details-input" placeholder="Grávida há quantas semanas?" value={fichaAnamnese.gravidaHaQuantasSemanas || ''} onChange={e => setFichaAnamnese({ ...fichaAnamnese, gravidaHaQuantasSemanas: e.target.value })} required />
-                            )}
-                          </div>
 
-                          <div className="anamnese-question-row" style={{ background: 'var(--bg-main)' }}>
-                            <div className="anamnese-controls">
-                              <span className="anamnese-label">Está amamentando?</span>
-                              <div className="toggle-group">
-                                <button type="button" className={`toggle-btn ${fichaAnamnese.estaAmamentando ? 'active yes' : ''}`} onClick={() => setFichaAnamnese({ ...fichaAnamnese, estaAmamentando: true })}>Sim</button>
-                                <button type="button" className={`toggle-btn ${!fichaAnamnese.estaAmamentando ? 'active no' : ''}`} onClick={() => setFichaAnamnese({ ...fichaAnamnese, estaAmamentando: false })}>Não</button>
+                            <div className="anamnese-question-row" style={{ background: 'var(--bg-main)' }}>
+                              <div className="anamnese-controls">
+                                <span className="anamnese-label">Está amamentando?</span>
+                                <div className="toggle-group">
+                                  <button type="button" className={`toggle-btn ${fichaAnamnese.estaAmamentando ? 'active yes' : ''}`} onClick={() => setFichaAnamnese({ ...fichaAnamnese, estaAmamentando: true })}>Sim</button>
+                                  <button type="button" className={`toggle-btn ${!fichaAnamnese.estaAmamentando ? 'active no' : ''}`} onClick={() => setFichaAnamnese({ ...fichaAnamnese, estaAmamentando: false })}>Não</button>
+                                </div>
                               </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    )}
+                      )}
 
                     {/* Confirmação e Declaração */}
                     <div className="glass-panel" style={{ padding: '24px', background: 'rgba(59, 130, 246, 0.03)', border: '1px solid rgba(59, 130, 246, 0.15)', borderRadius: '12px', marginTop: '12px' }}>
