@@ -327,7 +327,7 @@ export function Patients() {
     temProblemaCardiaco: false,
     qualProblemaCardiaco: null,
     tipoSangramento: false,
-    tipoPA: 2,
+    tipoPA: 0,
     tomandoAlgumMedicamento: false,
     quaisMedicamentos: null,
     bombinhaMedicacaoControle: null,
@@ -356,6 +356,14 @@ export function Patients() {
       const result = await response.json();
       const data = result.data || {};
 
+      let tipoPANum = 0;
+      if (typeof data.tipoPA === 'number') {
+        tipoPANum = data.tipoPA;
+      } else if (typeof data.tipoPA === 'string') {
+        const paMapping: { [key: string]: number } = { 'Normal': 0, 'Alta': 1, 'Baixa': 2 };
+        tipoPANum = paMapping[data.tipoPA] !== undefined ? paMapping[data.tipoPA] : 0;
+      }
+
       const normalizedDeficiencias = (data.deficiencias || []).map((d: any) => ({
         ...d,
         deficienciaNecessidadeEspecial: getDeficienciaId(d.deficienciaNecessidadeEspecial)
@@ -379,6 +387,7 @@ export function Patients() {
       setFichaAnamnese({
         ...data,
         nomePaciente: patientName,
+        tipoPA: tipoPANum,
         bombinhaMedicacaoControle: data.bombinhaMedicacaoControle ?? null,
         possuiSangramentoProlongado: data.possuiSangramentoProlongado ?? null,
         outrasCondicoesCardiacas: data.outrasCondicoesCardiacas ?? null,
@@ -405,13 +414,13 @@ export function Patients() {
     }
     try {
       setIsSaving(true);
-      const paMapping: { [key: string]: number } = { 'Alta': 1, 'Normal': 2, 'Baixa': 3 };
+      const paMapping: { [key: string]: number } = { 'Normal': 0, 'Alta': 1, 'Baixa': 2 };
       
-      let tipoPANum = 2;
+      let tipoPANum = 0;
       if (typeof fichaAnamnese.tipoPA === 'number') {
         tipoPANum = fichaAnamnese.tipoPA;
       } else if (typeof fichaAnamnese.tipoPA === 'string') {
-        tipoPANum = paMapping[fichaAnamnese.tipoPA] || 2;
+        tipoPANum = paMapping[fichaAnamnese.tipoPA] !== undefined ? paMapping[fichaAnamnese.tipoPA] : 0;
       }
 
       const payload = {
@@ -1360,13 +1369,10 @@ export function Patients() {
                     <div className="anamnese-question-row">
                       <div className="anamnese-controls">
                         <span className="anamnese-label">Pressão Arterial</span>
-                        <select className="input-field" style={{ width: '150px' }} value={fichaAnamnese.tipoPA} onChange={e => setFichaAnamnese({ ...fichaAnamnese, tipoPA: e.target.value })}>
-                          <option value="Normal">Normal</option>
-                          <option value="Alta">Alta</option>
-                          <option value="Baixa">Baixa</option>
+                        <select className="input-field" style={{ width: '150px' }} value={fichaAnamnese.tipoPA} onChange={e => setFichaAnamnese({ ...fichaAnamnese, tipoPA: Number(e.target.value) })}>
+                          <option value={0}>Normal</option>
                           <option value={1}>Alta</option>
-                          <option value={2}>Normal</option>
-                          <option value={3}>Baixa</option>
+                          <option value={2}>Baixa</option>
                         </select>
                       </div>
                     </div>
