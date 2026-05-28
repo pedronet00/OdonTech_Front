@@ -1902,6 +1902,7 @@ export function Patients() {
                           <option value={FormaPagamentoEnum.PIX}>PIX</option>
                           <option value={FormaPagamentoEnum.Debito}>Débito</option>
                           <option value={FormaPagamentoEnum.Credito}>Crédito</option>
+                          <option value={FormaPagamentoEnum.Dinheiro}>Dinheiro</option>
                         </select>
                       </div>
                     </div>

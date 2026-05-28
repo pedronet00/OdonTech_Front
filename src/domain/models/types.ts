@@ -20,7 +20,7 @@ export interface Patient {
   clinicaId: string;
   nomeClinica?: string;
   possuiFichaAnamnese?: boolean;
-  
+
   endereco?: Endereco | null;
   profissao?: string | null;
   nomeContatoEmergencia?: string | null;
@@ -198,7 +198,8 @@ export interface FichaAnamnese {
 export const FormaPagamentoEnum = {
   Credito: 0,
   Debito: 1,
-  PIX: 2
+  PIX: 2,
+  Dinheiro: 3
 } as const;
 
 export type FormaPagamentoType = typeof FormaPagamentoEnum[keyof typeof FormaPagamentoEnum];

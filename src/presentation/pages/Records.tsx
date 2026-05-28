@@ -343,7 +343,7 @@ export function Records() {
             pointerEvents: 'none',
             zIndex: 0
           }} />
-          
+
           <div className="flex-row items-start justify-between" style={{ position: 'relative', zIndex: 1, flexWrap: 'wrap', gap: '20px' }}>
             <div className="flex-row gap-4" style={{ flexWrap: 'wrap' }}>
               <div style={{
@@ -361,7 +361,7 @@ export function Records() {
               }}>
                 {patient.nome ? patient.nome.charAt(0).toUpperCase() : 'P'}
               </div>
-              
+
               <div className="flex-col gap-1">
                 <div className="flex-row items-center gap-2" style={{ flexWrap: 'wrap' }}>
                   <h2 style={{ fontSize: '1.4rem', fontWeight: 700, margin: 0 }}>{patient.nome}</h2>
@@ -369,7 +369,7 @@ export function Records() {
                     {convenioMap[patient.convenio] || 'Outros'}
                   </span>
                 </div>
-                
+
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '8px 24px', marginTop: '8px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                   <div><strong>CPF:</strong> {patient.cpf || 'Não informado'}</div>
                   {patient.dataNascimento && (
@@ -706,6 +706,7 @@ export function Records() {
                         <option value={FormaPagamentoEnum.PIX}>PIX</option>
                         <option value={FormaPagamentoEnum.Debito}>Débito</option>
                         <option value={FormaPagamentoEnum.Credito}>Crédito</option>
+                        <option value={FormaPagamentoEnum.Dinheiro}>Dinheiro</option>
                       </select>
                     </div>
                     <div className="form-group">
