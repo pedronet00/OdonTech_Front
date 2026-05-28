@@ -110,6 +110,7 @@ export function Patients() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -614,7 +615,15 @@ export function Patients() {
     setIsCreating(true);
   };
 
+  const ITEMS_PER_PAGE = 5;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
   const filteredPatients = patients.filter(p => p.nome.toLowerCase().includes(searchTerm.toLowerCase()));
+  const totalPages = Math.ceil(filteredPatients.length / ITEMS_PER_PAGE);
+  const paginatedPatients = filteredPatients.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   const toggleDropdown = (id: string) => {
     setActiveDropdown(activeDropdown === id ? null : id);
@@ -664,7 +673,7 @@ export function Patients() {
               <tr>
                 <td colSpan={5} style={{ textAlign: 'center', padding: '32px', color: '#ef4444' }}>{error}</td>
               </tr>
-            ) : filteredPatients.map(patient => (
+            ) : paginatedPatients.map(patient => (
               <tr key={patient.id}>
                 <td data-label="Nome" style={{ fontWeight: 600, color: 'var(--primary)' }}>{patient.nome}</td>
                 <td data-label="Contato">
@@ -743,6 +752,37 @@ export function Patients() {
             )}
           </tbody>
         </table>
+
+        {totalPages > 1 && (
+          <div className="flex-row items-center justify-between" style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid var(--border-subtle)', flexWrap: 'wrap', gap: '12px' }}>
+            <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+              Mostrando {Math.min(filteredPatients.length, (currentPage - 1) * ITEMS_PER_PAGE + 1)} a {Math.min(filteredPatients.length, currentPage * ITEMS_PER_PAGE)} de {filteredPatients.length} pacientes
+            </span>
+            <div className="flex-row gap-2" style={{ alignItems: 'center' }}>
+              <button 
+                type="button"
+                className="btn btn-secondary" 
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} 
+                disabled={currentPage === 1}
+                style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+              >
+                Anterior
+              </button>
+              <span style={{ fontSize: '0.9rem', fontWeight: 500, padding: '0 8px' }}>
+                {currentPage} de {totalPages}
+              </span>
+              <button 
+                type="button"
+                className="btn btn-secondary" 
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} 
+                disabled={currentPage === totalPages}
+                style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+              >
+                Próximo
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modal de Criação */}
