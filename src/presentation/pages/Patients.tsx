@@ -1193,7 +1193,7 @@ export function Patients() {
                             className="input-field"
                             placeholder="Ex: SP"
                             maxLength={2}
-                            value={editingPatient.endereco?.state || editingPatient.endereco?.estado || ''}
+                            value={editingPatient.endereco?.estado || ''}
                             onChange={e => setEditingPatient({ ...editingPatient, endereco: { ...editingPatient.endereco!, estado: e.target.value.toUpperCase() } })}
                           />
                         </div>
