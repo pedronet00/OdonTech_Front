@@ -75,12 +75,15 @@ export function Records() {
 
     try {
       setLoading(true);
-      const [aData, pData] = await Promise.all([
+      const [aData, pList] = await Promise.all([
         ApiClient.get<Atendimento[]>(`/atendimentos/paciente/${id}`),
-        ApiClient.get<Patient>(`/pacientes/${id}`)
+        user?.clinica_id
+          ? ApiClient.get<Patient[]>(`/pacientes/clinica/${user.clinica_id}`)
+          : Promise.resolve([])
       ]);
       setAtendimentos(aData);
-      setPatient(pData);
+      const foundPatient = pList.find(p => p.id === id) || null;
+      setPatient(foundPatient);
     } catch (err: any) {
       toast.error(err.message || 'Não foi possível carregar o prontuário.');
       console.error(err);
