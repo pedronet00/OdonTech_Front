@@ -850,123 +850,127 @@ export function Patients() {
 
                   {/* — Profissão & Emergência — */}
                   <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px', marginTop: '4px' }}>
-                    <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>Profissão &amp; Contato de Emergência</p>
-                    <div className="form-group">
-                      <label className="input-label">Profissão</label>
-                      <input
-                        type="text"
-                        className="input-field"
-                        placeholder="Ex: Engenheiro, Professor..."
-                        value={newPatient.profissao || ''}
-                        onChange={e => setNewPatient({ ...newPatient, profissao: e.target.value })}
-                      />
-                    </div>
-                    <div className="grid-cols-2">
+                    <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>Profissão &amp; Contato de Emergência</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                       <div className="form-group">
-                        <label className="input-label">Nome do Contato de Emergência</label>
+                        <label className="input-label">Profissão</label>
                         <input
                           type="text"
                           className="input-field"
-                          placeholder="Ex: Maria Silva"
-                          value={newPatient.nomeContatoEmergencia || ''}
-                          onChange={e => setNewPatient({ ...newPatient, nomeContatoEmergencia: e.target.value })}
+                          placeholder="Ex: Engenheiro, Professor..."
+                          value={newPatient.profissao || ''}
+                          onChange={e => setNewPatient({ ...newPatient, profissao: e.target.value })}
                         />
                       </div>
-                      <div className="form-group">
-                        <label className="input-label">Telefone de Emergência</label>
-                        <input
-                          type="text"
-                          className="input-field"
-                          placeholder="(00) 00000-0000"
-                          maxLength={15}
-                          value={newPatient.telefoneContatoEmergencia || ''}
-                          onChange={e => setNewPatient({ ...newPatient, telefoneContatoEmergencia: applyPhoneMask(e.target.value) })}
-                        />
+                      <div className="grid-cols-2">
+                        <div className="form-group">
+                          <label className="input-label">Nome do Contato de Emergência</label>
+                          <input
+                            type="text"
+                            className="input-field"
+                            placeholder="Ex: Maria Silva"
+                            value={newPatient.nomeContatoEmergencia || ''}
+                            onChange={e => setNewPatient({ ...newPatient, nomeContatoEmergencia: e.target.value })}
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label className="input-label">Telefone de Emergência</label>
+                          <input
+                            type="text"
+                            className="input-field"
+                            placeholder="(00) 00000-0000"
+                            maxLength={15}
+                            value={newPatient.telefoneContatoEmergencia || ''}
+                            onChange={e => setNewPatient({ ...newPatient, telefoneContatoEmergencia: applyPhoneMask(e.target.value) })}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
 
                   {/* — Endereço — */}
                   <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px', marginTop: '4px' }}>
-                    <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>Endereço Residencial</p>
-                    <div className="grid-cols-2">
+                    <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>Endereço Residencial</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                      <div className="grid-cols-2">
+                        <div className="form-group">
+                          <label className="input-label">Logradouro</label>
+                          <input
+                            type="text"
+                            className="input-field"
+                            placeholder="Rua, Av., Travessa..."
+                            value={newPatient.endereco?.logradouro || ''}
+                            onChange={e => setNewPatient({ ...newPatient, endereco: { ...newPatient.endereco!, logradouro: e.target.value } })}
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label className="input-label">Número</label>
+                          <input
+                            type="number"
+                            className="input-field"
+                            placeholder="Ex: 123"
+                            min={0}
+                            value={newPatient.endereco?.numero || ''}
+                            onChange={e => setNewPatient({ ...newPatient, endereco: { ...newPatient.endereco!, numero: Number(e.target.value) } })}
+                          />
+                        </div>
+                      </div>
+                      <div className="grid-cols-2">
+                        <div className="form-group">
+                          <label className="input-label">Complemento</label>
+                          <input
+                            type="text"
+                            className="input-field"
+                            placeholder="Apto, Bloco..."
+                            value={newPatient.endereco?.complemento || ''}
+                            onChange={e => setNewPatient({ ...newPatient, endereco: { ...newPatient.endereco!, complemento: e.target.value } })}
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label className="input-label">Bairro</label>
+                          <input
+                            type="text"
+                            className="input-field"
+                            placeholder="Ex: Centro"
+                            value={newPatient.endereco?.bairro || ''}
+                            onChange={e => setNewPatient({ ...newPatient, endereco: { ...newPatient.endereco!, bairro: e.target.value } })}
+                          />
+                        </div>
+                      </div>
+                      <div className="grid-cols-2">
+                        <div className="form-group">
+                          <label className="input-label">Cidade</label>
+                          <input
+                            type="text"
+                            className="input-field"
+                            placeholder="Ex: São Paulo"
+                            value={newPatient.endereco?.cidade || ''}
+                            onChange={e => setNewPatient({ ...newPatient, endereco: { ...newPatient.endereco!, cidade: e.target.value } })}
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label className="input-label">Estado (UF)</label>
+                          <input
+                            type="text"
+                            className="input-field"
+                            placeholder="Ex: SP"
+                            maxLength={2}
+                            value={newPatient.endereco?.estado || ''}
+                            onChange={e => setNewPatient({ ...newPatient, endereco: { ...newPatient.endereco!, estado: e.target.value.toUpperCase() } })}
+                          />
+                        </div>
+                      </div>
                       <div className="form-group">
-                        <label className="input-label">Logradouro</label>
+                        <label className="input-label">CEP</label>
                         <input
                           type="text"
                           className="input-field"
-                          placeholder="Rua, Av., Travessa..."
-                          value={newPatient.endereco?.logradouro || ''}
-                          onChange={e => setNewPatient({ ...newPatient, endereco: { ...newPatient.endereco!, logradouro: e.target.value } })}
+                          placeholder="00000-000"
+                          maxLength={9}
+                          value={newPatient.endereco?.cep || ''}
+                          onChange={e => setNewPatient({ ...newPatient, endereco: { ...newPatient.endereco!, cep: applyCepMask(e.target.value) } })}
                         />
                       </div>
-                      <div className="form-group">
-                        <label className="input-label">Número</label>
-                        <input
-                          type="number"
-                          className="input-field"
-                          placeholder="Ex: 123"
-                          min={0}
-                          value={newPatient.endereco?.numero || ''}
-                          onChange={e => setNewPatient({ ...newPatient, endereco: { ...newPatient.endereco!, numero: Number(e.target.value) } })}
-                        />
-                      </div>
-                    </div>
-                    <div className="grid-cols-2">
-                      <div className="form-group">
-                        <label className="input-label">Complemento</label>
-                        <input
-                          type="text"
-                          className="input-field"
-                          placeholder="Apto, Bloco..."
-                          value={newPatient.endereco?.complemento || ''}
-                          onChange={e => setNewPatient({ ...newPatient, endereco: { ...newPatient.endereco!, complemento: e.target.value } })}
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label className="input-label">Bairro</label>
-                        <input
-                          type="text"
-                          className="input-field"
-                          placeholder="Ex: Centro"
-                          value={newPatient.endereco?.bairro || ''}
-                          onChange={e => setNewPatient({ ...newPatient, endereco: { ...newPatient.endereco!, bairro: e.target.value } })}
-                        />
-                      </div>
-                    </div>
-                    <div className="grid-cols-2">
-                      <div className="form-group">
-                        <label className="input-label">Cidade</label>
-                        <input
-                          type="text"
-                          className="input-field"
-                          placeholder="Ex: São Paulo"
-                          value={newPatient.endereco?.cidade || ''}
-                          onChange={e => setNewPatient({ ...newPatient, endereco: { ...newPatient.endereco!, cidade: e.target.value } })}
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label className="input-label">Estado (UF)</label>
-                        <input
-                          type="text"
-                          className="input-field"
-                          placeholder="Ex: SP"
-                          maxLength={2}
-                          value={newPatient.endereco?.estado || ''}
-                          onChange={e => setNewPatient({ ...newPatient, endereco: { ...newPatient.endereco!, estado: e.target.value.toUpperCase() } })}
-                        />
-                      </div>
-                    </div>
-                    <div className="form-group">
-                      <label className="input-label">CEP</label>
-                      <input
-                        type="text"
-                        className="input-field"
-                        placeholder="00000-000"
-                        maxLength={9}
-                        value={newPatient.endereco?.cep || ''}
-                        onChange={e => setNewPatient({ ...newPatient, endereco: { ...newPatient.endereco!, cep: applyCepMask(e.target.value) } })}
-                      />
                     </div>
                   </div>
                 </div>
@@ -998,6 +1002,7 @@ export function Patients() {
               <div className="modal-body">
                 <div className="form-group-container">
                   <div className="form-group">
+                    <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>Informações Pessoais</p>
                     <label className="input-label">Nome Completo <span style={{ color: '#ef4444' }}>*</span></label>
                     <input
                       type="text"
@@ -1083,123 +1088,127 @@ export function Patients() {
 
                   {/* — Profissão & Emergência — */}
                   <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px', marginTop: '4px' }}>
-                    <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>Profissão &amp; Contato de Emergência</p>
-                    <div className="form-group">
-                      <label className="input-label">Profissão</label>
-                      <input
-                        type="text"
-                        className="input-field"
-                        placeholder="Ex: Engenheiro, Professor..."
-                        value={editingPatient.profissao || ''}
-                        onChange={e => setEditingPatient({ ...editingPatient, profissao: e.target.value })}
-                      />
-                    </div>
-                    <div className="grid-cols-2">
+                    <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>Profissão &amp; Contato de Emergência</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                       <div className="form-group">
-                        <label className="input-label">Nome do Contato de Emergência</label>
+                        <label className="input-label">Profissão</label>
                         <input
                           type="text"
                           className="input-field"
-                          placeholder="Ex: Maria Silva"
-                          value={editingPatient.nomeContatoEmergencia || ''}
-                          onChange={e => setEditingPatient({ ...editingPatient, nomeContatoEmergencia: e.target.value })}
+                          placeholder="Ex: Engenheiro, Professor..."
+                          value={editingPatient.profissao || ''}
+                          onChange={e => setEditingPatient({ ...editingPatient, profissao: e.target.value })}
                         />
                       </div>
-                      <div className="form-group">
-                        <label className="input-label">Telefone de Emergência</label>
-                        <input
-                          type="text"
-                          className="input-field"
-                          placeholder="(00) 00000-0000"
-                          maxLength={15}
-                          value={editingPatient.telefoneContatoEmergencia || ''}
-                          onChange={e => setEditingPatient({ ...editingPatient, telefoneContatoEmergencia: applyPhoneMask(e.target.value) })}
-                        />
+                      <div className="grid-cols-2">
+                        <div className="form-group">
+                          <label className="input-label">Nome do Contato de Emergência</label>
+                          <input
+                            type="text"
+                            className="input-field"
+                            placeholder="Ex: Maria Silva"
+                            value={editingPatient.nomeContatoEmergencia || ''}
+                            onChange={e => setEditingPatient({ ...editingPatient, nomeContatoEmergencia: e.target.value })}
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label className="input-label">Telefone de Emergência</label>
+                          <input
+                            type="text"
+                            className="input-field"
+                            placeholder="(00) 00000-0000"
+                            maxLength={15}
+                            value={editingPatient.telefoneContatoEmergencia || ''}
+                            onChange={e => setEditingPatient({ ...editingPatient, telefoneContatoEmergencia: applyPhoneMask(e.target.value) })}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
 
                   {/* — Endereço — */}
                   <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px', marginTop: '4px' }}>
-                    <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>Endereço Residencial</p>
-                    <div className="grid-cols-2">
+                    <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>Endereço Residencial</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                      <div className="grid-cols-2">
+                        <div className="form-group">
+                          <label className="input-label">Logradouro</label>
+                          <input
+                            type="text"
+                            className="input-field"
+                            placeholder="Rua, Av., Travessa..."
+                            value={editingPatient.endereco?.logradouro || ''}
+                            onChange={e => setEditingPatient({ ...editingPatient, endereco: { ...editingPatient.endereco!, logradouro: e.target.value } })}
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label className="input-label">Número</label>
+                          <input
+                            type="number"
+                            className="input-field"
+                            placeholder="Ex: 123"
+                            min={0}
+                            value={editingPatient.endereco?.numero || ''}
+                            onChange={e => setEditingPatient({ ...editingPatient, endereco: { ...editingPatient.endereco!, numero: Number(e.target.value) } })}
+                          />
+                        </div>
+                      </div>
+                      <div className="grid-cols-2">
+                        <div className="form-group">
+                          <label className="input-label">Complemento</label>
+                          <input
+                            type="text"
+                            className="input-field"
+                            placeholder="Apto, Bloco..."
+                            value={editingPatient.endereco?.complemento || ''}
+                            onChange={e => setEditingPatient({ ...editingPatient, endereco: { ...editingPatient.endereco!, complemento: e.target.value } })}
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label className="input-label">Bairro</label>
+                          <input
+                            type="text"
+                            className="input-field"
+                            placeholder="Ex: Centro"
+                            value={editingPatient.endereco?.bairro || ''}
+                            onChange={e => setEditingPatient({ ...editingPatient, endereco: { ...editingPatient.endereco!, bairro: e.target.value } })}
+                          />
+                        </div>
+                      </div>
+                      <div className="grid-cols-2">
+                        <div className="form-group">
+                          <label className="input-label">Cidade</label>
+                          <input
+                            type="text"
+                            className="input-field"
+                            placeholder="Ex: São Paulo"
+                            value={editingPatient.endereco?.cidade || ''}
+                            onChange={e => setEditingPatient({ ...editingPatient, endereco: { ...editingPatient.endereco!, cidade: e.target.value } })}
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label className="input-label">Estado (UF)</label>
+                          <input
+                            type="text"
+                            className="input-field"
+                            placeholder="Ex: SP"
+                            maxLength={2}
+                            value={editingPatient.endereco?.state || editingPatient.endereco?.estado || ''}
+                            onChange={e => setEditingPatient({ ...editingPatient, endereco: { ...editingPatient.endereco!, estado: e.target.value.toUpperCase() } })}
+                          />
+                        </div>
+                      </div>
                       <div className="form-group">
-                        <label className="input-label">Logradouro</label>
+                        <label className="input-label">CEP</label>
                         <input
                           type="text"
                           className="input-field"
-                          placeholder="Rua, Av., Travessa..."
-                          value={editingPatient.endereco?.logradouro || ''}
-                          onChange={e => setEditingPatient({ ...editingPatient, endereco: { ...editingPatient.endereco!, logradouro: e.target.value } })}
+                          placeholder="00000-000"
+                          maxLength={9}
+                          value={editingPatient.endereco?.cep || ''}
+                          onChange={e => setEditingPatient({ ...editingPatient, endereco: { ...editingPatient.endereco!, cep: applyCepMask(e.target.value) } })}
                         />
                       </div>
-                      <div className="form-group">
-                        <label className="input-label">Número</label>
-                        <input
-                          type="number"
-                          className="input-field"
-                          placeholder="Ex: 123"
-                          min={0}
-                          value={editingPatient.endereco?.numero || ''}
-                          onChange={e => setEditingPatient({ ...editingPatient, endereco: { ...editingPatient.endereco!, numero: Number(e.target.value) } })}
-                        />
-                      </div>
-                    </div>
-                    <div className="grid-cols-2">
-                      <div className="form-group">
-                        <label className="input-label">Complemento</label>
-                        <input
-                          type="text"
-                          className="input-field"
-                          placeholder="Apto, Bloco..."
-                          value={editingPatient.endereco?.complemento || ''}
-                          onChange={e => setEditingPatient({ ...editingPatient, endereco: { ...editingPatient.endereco!, complemento: e.target.value } })}
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label className="input-label">Bairro</label>
-                        <input
-                          type="text"
-                          className="input-field"
-                          placeholder="Ex: Centro"
-                          value={editingPatient.endereco?.bairro || ''}
-                          onChange={e => setEditingPatient({ ...editingPatient, endereco: { ...editingPatient.endereco!, bairro: e.target.value } })}
-                        />
-                      </div>
-                    </div>
-                    <div className="grid-cols-2">
-                      <div className="form-group">
-                        <label className="input-label">Cidade</label>
-                        <input
-                          type="text"
-                          className="input-field"
-                          placeholder="Ex: São Paulo"
-                          value={editingPatient.endereco?.cidade || ''}
-                          onChange={e => setEditingPatient({ ...editingPatient, endereco: { ...editingPatient.endereco!, cidade: e.target.value } })}
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label className="input-label">Estado (UF)</label>
-                        <input
-                          type="text"
-                          className="input-field"
-                          placeholder="Ex: SP"
-                          maxLength={2}
-                          value={editingPatient.endereco?.estado || ''}
-                          onChange={e => setEditingPatient({ ...editingPatient, endereco: { ...editingPatient.endereco!, estado: e.target.value.toUpperCase() } })}
-                        />
-                      </div>
-                    </div>
-                    <div className="form-group">
-                      <label className="input-label">CEP</label>
-                      <input
-                        type="text"
-                        className="input-field"
-                        placeholder="00000-000"
-                        maxLength={9}
-                        value={editingPatient.endereco?.cep || ''}
-                        onChange={e => setEditingPatient({ ...editingPatient, endereco: { ...editingPatient.endereco!, cep: applyCepMask(e.target.value) } })}
-                      />
                     </div>
                   </div>
                 </div>
