@@ -105,8 +105,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (!response.ok) throw new Error('Refresh failed');
 
-      const data: LoginResponse = await response.json();
-      login(data);
+      const json = await response.json();
+      if (!json.isSuccess || !json.data) throw new Error('Refresh failed');
+
+      login(json.data);
     } catch (error) {
       console.error('Refresh error', error);
       logout();

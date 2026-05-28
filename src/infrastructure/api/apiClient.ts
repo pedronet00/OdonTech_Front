@@ -30,14 +30,17 @@ class ApiClient {
 
         if (!response.ok) throw new Error('Refresh failed');
 
-        const data = await response.json();
-        localStorage.setItem('@OdonTech:token', data.accessToken);
-        localStorage.setItem('@OdonTech:refreshToken', data.refreshToken);
-        localStorage.setItem('@OdonTech:expiresAt', data.expiresAt);
+        const json = await response.json();
+        if (!json.isSuccess || !json.data) throw new Error('Refresh failed');
+
+        const responseData = json.data;
+        localStorage.setItem('@OdonTech:token', responseData.accessToken);
+        localStorage.setItem('@OdonTech:refreshToken', responseData.refreshToken);
+        localStorage.setItem('@OdonTech:expiresAt', responseData.expiresAt);
         
         window.dispatchEvent(new CustomEvent('tokenUpdated'));
         
-        return data.accessToken;
+        return responseData.accessToken;
       } catch (error) {
         console.error('API Client: Refresh error', error);
         return null;
