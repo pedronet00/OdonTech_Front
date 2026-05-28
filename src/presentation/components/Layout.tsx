@@ -30,7 +30,7 @@ export function Layout() {
           {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
-      
+
       {isMobileMenuOpen && (
         <div className="mobile-overlay" onClick={() => setIsMobileMenuOpen(false)}></div>
       )}
@@ -98,7 +98,7 @@ export function Layout() {
 
         <div style={{ padding: '0 12px', marginTop: 'auto', marginBottom: '16px' }}>
           <div className="user-profile" style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '16px' }}>
-            <div className="user-avatar">{user?.nome?.substring(0, 2).toUpperCase() || 'US'}</div>
+            <div className="user-avatar">{user?.nome?.substring(0, 1).toUpperCase() || 'US'}</div>
             <div className="user-info">
               <span className="user-name">{user?.nome || 'Usuário'}</span>
               <span className="user-role">{user?.clinica_nome || 'Admin'}</span>
