@@ -1076,3 +1076,32 @@ select {
   color: #94a3b8;
   padding-bottom: 20px;
 }
+
+/* Styled Select Button as btn-primary */
+.select-btn-primary {
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 0.9rem;
+  padding: 8px 36px 8px 32px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  outline: none;
+  transition: background var(--transition-fast);
+  font-family: var(--font-sans);
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.select-btn-primary:hover {
+  background: var(--primary-hover);
+}
+
+.select-btn-primary option {
+  color: var(--text-main);
+  background: var(--bg-surface);
+}

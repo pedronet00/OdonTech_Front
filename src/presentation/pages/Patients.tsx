@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserPlus, Search, MoreVertical, Edit, Trash2, FileText, ClipboardList, Save, X, DollarSign, Plus, Check, Ban } from 'lucide-react';
+import { UserPlus, Search, MoreVertical, Edit, Trash2, FileText, ClipboardList, Save, X, DollarSign, Plus, Check, Ban, Link, Share2 } from 'lucide-react';
 import { useAuth } from '../../application/contexts/AuthContext';
 import ApiClient from '../../infrastructure/api/apiClient';
 import type { Patient, FichaAnamnese, Pagamento, NovoPagamento, CondicoesCardiacas, CondicoesRespiratorias, DeficienciaNecessidadeEspecial, DoencasAlteracoesNoSangue } from '../../domain/models/types';
 import { FormaPagamentoEnum, StatusPagamentoEnum } from '../../domain/models/types';
 import toast from 'react-hot-toast';
 import { applyCpfMask, applyPhoneMask, applyCepMask } from '../../utils/masks';
+import { API_BASE_URL } from '../../infrastructure/config/api';
 
 const getDeficienciaId = (val: any): number => {
   if (val === null || val === undefined) return 0;
@@ -116,6 +117,7 @@ export function Patients() {
   const [isCreating, setIsCreating] = useState(false);
   const [newPatient, setNewPatient] = useState<Partial<Patient> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [generatedLink, setGeneratedLink] = useState<string | null>(null);
   const navigate = useNavigate();
   const [fichaAnamnese, setFichaAnamnese] = useState<FichaAnamnese | null>(null);
   const [anamneseActiveTab, setAnamneseActiveTab] = useState<'geral' | 'habitos' | 'patologias' | 'cardiovascular' | 'confirmacao'>('geral');
@@ -162,6 +164,36 @@ export function Patients() {
       toast.success('Paciente excluído com sucesso!');
     } catch (err: any) {
       toast.error(err.message);
+    }
+  };
+
+  const handleGenerateLink = async (tipoCadastro: number, pacienteId: string | null = null) => {
+    if (!user?.clinica_id) {
+      toast.error('Erro: ID da clínica não encontrado.');
+      return;
+    }
+    try {
+      setIsSaving(true);
+      const baseUrl = API_BASE_URL.replace('/v1', '');
+      const payload = {
+        tipoCadastro,
+        pacienteId,
+        clinicaId: user.clinica_id
+      };
+
+      const data = await ApiClient.post<any>(`${baseUrl}/CadastroIntegrado`, payload);
+      if (data && data.id) {
+        const link = `${window.location.origin}/cadastro-integrado/${data.id}`;
+        navigator.clipboard.writeText(link);
+        setGeneratedLink(link);
+        toast.success('Link de cadastro gerado e copiado para a área de transferência!');
+      } else {
+        throw new Error('ID de cadastro não retornado pelo servidor.');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao gerar link de cadastro.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -636,9 +668,27 @@ export function Patients() {
           <h1 style={{ fontSize: '1.75rem', marginBottom: '8px' }}>Pacientes</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Gerencie os cadastros dos seus pacientes</p>
         </div>
-        <button className="btn btn-primary" onClick={openCreateModal}>
-          <UserPlus size={18} /> <span className="mobile-hide">Novo Paciente</span><span className="mobile-only">Novo</span>
-        </button>
+        <div style={{ position: 'relative', display: 'inline-block' }}>
+          <select
+            className="select-btn-primary"
+            value=""
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val === 'manual') openCreateModal();
+              if (val === 'link') handleGenerateLink(1);
+            }}
+          >
+            <option value="" disabled hidden>Novo Paciente</option>
+            <option value="manual">Cadastrar Manualmente</option>
+            <option value="link">Gerar Link de Cadastro</option>
+          </select>
+          <div style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'white', display: 'flex', alignItems: 'center' }}>
+            <UserPlus size={16} />
+          </div>
+          <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'white', display: 'flex', alignItems: 'center', fontSize: '0.7rem' }}>
+            ▼
+          </div>
+        </div>
       </div>
 
       <div className="glass-panel" style={{ padding: '24px' }}>
@@ -712,6 +762,15 @@ export function Patients() {
                         </button>
                         <button
                           className="dropdown-item"
+                          onClick={() => {
+                            handleGenerateLink(0, patient.id);
+                            setActiveDropdown(null);
+                          }}
+                        >
+                          <Link size={16} /> Link Anamnese
+                        </button>
+                        <button
+                          className="dropdown-item"
                           onClick={() => openFinanceModal(patient)}
                         >
                           <DollarSign size={16} /> Finanças
@@ -759,10 +818,10 @@ export function Patients() {
               Mostrando {Math.min(filteredPatients.length, (currentPage - 1) * ITEMS_PER_PAGE + 1)} a {Math.min(filteredPatients.length, currentPage * ITEMS_PER_PAGE)} de {filteredPatients.length} pacientes
             </span>
             <div className="flex-row gap-2" style={{ alignItems: 'center' }}>
-              <button 
+              <button
                 type="button"
-                className="btn btn-secondary" 
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} 
+                className="btn btn-secondary"
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
                 style={{ padding: '6px 12px', fontSize: '0.85rem' }}
               >
@@ -771,10 +830,10 @@ export function Patients() {
               <span style={{ fontSize: '0.9rem', fontWeight: 500, padding: '0 8px' }}>
                 {currentPage} de {totalPages}
               </span>
-              <button 
+              <button
                 type="button"
-                className="btn btn-secondary" 
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} 
+                className="btn btn-secondary"
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
                 style={{ padding: '6px 12px', fontSize: '0.85rem' }}
               >
@@ -2038,6 +2097,52 @@ export function Patients() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {generatedLink && (
+        <div className="modal-overlay" onClick={() => setGeneratedLink(null)}>
+          <div className="modal-content" style={{ minWidth: '350px', maxWidth: '500px' }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Link de Cadastro Gerado</h2>
+              <button onClick={() => setGeneratedLink(null)} className="action-btn">
+                <X size={24} />
+              </button>
+            </div>
+            <div className="modal-body" style={{ padding: '24px' }}>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '16px' }}>
+                O link abaixo foi copiado para a área de transferência. Você pode enviá-lo ao paciente:
+              </p>
+              <div className="flex-row items-center gap-2" style={{ background: 'var(--bg-main)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-subtle)', marginBottom: '24px' }}>
+                <input
+                  type="text"
+                  readOnly
+                  value={generatedLink}
+                  style={{ background: 'transparent', border: 'none', width: '100%', fontSize: '0.9rem', color: 'var(--text-main)', outline: 'none' }}
+                  onClick={(e) => (e.target as HTMLInputElement).select()}
+                />
+              </div>
+              <div className="flex-row justify-end gap-3">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setGeneratedLink(null)}
+                >
+                  Fechar
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => {
+                    navigator.clipboard.writeText(generatedLink);
+                    toast.success('Link copiado!');
+                  }}
+                >
+                  <Share2 size={16} /> Copiar Novamente
+                </button>
               </div>
             </div>
           </div>

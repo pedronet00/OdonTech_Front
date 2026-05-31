@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './presentation/components/Layout';
 import { Login } from './presentation/pages/Login';
+import { CadastroIntegrado } from './presentation/pages/CadastroIntegrado';
 import { Patients } from './presentation/pages/Patients';
 import { Schedule } from './presentation/pages/Schedule';
 import { Records } from './presentation/pages/Records';
@@ -22,6 +23,7 @@ function App() {
         <Toaster position="top-right" />
         <Routes>
           <Route path="/entrar" element={<Login />} />
+          <Route path="/cadastro-integrado/:guid" element={<CadastroIntegrado />} />
 
           <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
             <Route index element={<Navigate to="/pacientes" replace />} />
