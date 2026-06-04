@@ -6,7 +6,8 @@ import {
   LogOut,
   Stethoscope,
   Menu,
-  X
+  X,
+  Settings as SettingsIcon
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '../../application/contexts/AuthContext';
@@ -80,6 +81,15 @@ export function Layout() {
           >
             <Stethoscope className="nav-icon" />
             <span>Profissionais</span>
+          </NavLink>
+
+          <NavLink
+            to="/configuracoes"
+            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <SettingsIcon className="nav-icon" />
+            <span>Configurações</span>
           </NavLink>
           <button
             className="nav-item w-full"

@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FilePlus, Activity, ArrowLeft, Calendar, User, MoreVertical, Edit, Trash2, X, File, Download, Image, Upload, FileText, DollarSign } from 'lucide-react';
+import { FilePlus, Activity, ArrowLeft, Calendar, User, MoreVertical, Edit, Trash2, X, File, Download, Image, Upload, FileText, DollarSign, Check } from 'lucide-react';
 import { useAuth } from '../../application/contexts/AuthContext';
 import ApiClient from '../../infrastructure/api/apiClient';
-import type { Atendimento, Patient } from '../../domain/models/types';
+import type { Atendimento, Patient, Pagamento } from '../../domain/models/types';
 import { FormaPagamentoEnum, StatusPagamentoEnum } from '../../domain/models/types';
 import toast from 'react-hot-toast';
 
@@ -42,6 +42,12 @@ export function Records() {
     observacao: '',
     atendimentoId: ''
   });
+
+  const [permiteAlterarConcluidos, setPermiteAlterarConcluidos] = useState(false);
+
+  const [expandedPayments, setExpandedPayments] = useState<{[key: string]: boolean}>({});
+  const [loadingPayments, setLoadingPayments] = useState<{[key: string]: boolean}>({});
+  const [paymentsMap, setPaymentsMap] = useState<{[key: string]: Pagamento[]}>({});
 
   // File management state
   const [activeTab, setActiveTab] = useState<'timeline' | 'files'>('timeline');
@@ -86,15 +92,23 @@ export function Records() {
 
     try {
       setLoading(true);
-      const [aData, pList] = await Promise.all([
+      const [aData, pList, configData] = await Promise.all([
         ApiClient.get<Atendimento[]>(`/atendimentos/paciente/${id}`),
         user?.clinica_id
           ? ApiClient.get<Patient[]>(`/pacientes/clinica/${user.clinica_id}`)
-          : Promise.resolve([])
+          : Promise.resolve([]),
+        user?.clinica_id
+          ? ApiClient.get<any>(`/clinicas/configuracoes/${user.clinica_id}`).catch(() => null)
+          : Promise.resolve(null)
       ]);
       setAtendimentos(aData);
       const foundPatient = pList.find(p => p.id === id) || null;
       setPatient(foundPatient);
+      if (configData) {
+        setPermiteAlterarConcluidos(configData.permiteAlterarAtendimentosConcluidos);
+      } else {
+        setPermiteAlterarConcluidos(false);
+      }
     } catch (err: any) {
       toast.error(err.message || 'Não foi possível carregar o prontuário.');
       console.error(err);
@@ -330,10 +344,69 @@ export function Records() {
       toast.success('Pagamento registrado com sucesso!');
       setIsRegisteringPayment(false);
       await fetchData();
+      if (expandedPayments[paymentData.atendimentoId]) {
+        await fetchPaymentsForAtendimento(paymentData.atendimentoId);
+      }
     } catch (err: any) {
       toast.error(err.message || 'Erro ao registrar pagamento.');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleTogglePayments = async (atendimentoId: string) => {
+    const isExpanded = !expandedPayments[atendimentoId];
+    setExpandedPayments(prev => ({ ...prev, [atendimentoId]: isExpanded }));
+
+    if (isExpanded) {
+      await fetchPaymentsForAtendimento(atendimentoId);
+    }
+  };
+
+  const fetchPaymentsForAtendimento = async (atendimentoId: string) => {
+    try {
+      setLoadingPayments(prev => ({ ...prev, [atendimentoId]: true }));
+      const data = await ApiClient.get<any[]>(`/pagamentos/atendimento/${atendimentoId}`);
+      setPaymentsMap(prev => ({ ...prev, [atendimentoId]: data }));
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao carregar pagamentos.');
+    } finally {
+      setLoadingPayments(prev => ({ ...prev, [atendimentoId]: false }));
+    }
+  };
+
+  const handleMarkPaymentAsPaid = async (paymentId: string, atendimentoId: string) => {
+    try {
+      await ApiClient.patch(`/pagamentos/${paymentId}/pagar`);
+      toast.success('Pagamento marcado como pago!');
+      await fetchPaymentsForAtendimento(atendimentoId);
+      await fetchData();
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao atualizar pagamento.');
+    }
+  };
+
+  const handleCancelPaymentItem = async (paymentId: string, atendimentoId: string) => {
+    if (!window.confirm('Deseja realmente cancelar este pagamento?')) return;
+    try {
+      await ApiClient.patch(`/pagamentos/${paymentId}/cancelar`);
+      toast.success('Pagamento cancelado!');
+      await fetchPaymentsForAtendimento(atendimentoId);
+      await fetchData();
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao cancelar pagamento.');
+    }
+  };
+
+  const handleDeletePaymentItem = async (paymentId: string, atendimentoId: string) => {
+    if (!window.confirm('Deseja excluir permanentemente este pagamento?')) return;
+    try {
+      await ApiClient.delete(`/pagamentos/${paymentId}`);
+      toast.success('Pagamento excluído!');
+      await fetchPaymentsForAtendimento(atendimentoId);
+      await fetchData();
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao excluir pagamento.');
     }
   };
 
@@ -479,6 +552,8 @@ export function Records() {
             </div>
           ) : atendimentos.length > 0 ? (
             atendimentos.map((atendimento) => {
+              const isFinalized = atendimento.statusAtendimento === 'Concluido' || atendimento.statusAtendimento === 'Cancelado';
+              const canModify = !isFinalized || permiteAlterarConcluidos;
               return (
                 <div
                   key={atendimento.id}
@@ -502,6 +577,20 @@ export function Records() {
                             <span className="flex-row items-center gap-1"><Calendar size={14} /> {new Date(atendimento.dataAtendimento).toLocaleDateString('pt-BR')}</span>
                             <span className="flex-row items-center gap-1"><User size={14} /> {atendimento.nomeProfissional}</span>
                           </div>
+                          {(atendimento.valorAtendimento != null || (atendimento.valorPendente != null && atendimento.valorPendente > 0)) && (
+                            <div className="flex-row items-center gap-4" style={{ fontSize: '0.85rem', marginTop: '6px' }}>
+                              {atendimento.valorAtendimento != null && (
+                                <span style={{ color: 'var(--text-muted)' }}>
+                                  <strong>Valor:</strong> R$ {atendimento.valorAtendimento.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </span>
+                              )}
+                              {atendimento.valorPendente != null && atendimento.valorPendente > 0 && (
+                                <span style={{ color: 'var(--danger)', fontWeight: 600 }}>
+                                  <strong>Pendente:</strong> R$ {atendimento.valorPendente.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className="flex-row items-center gap-3">
@@ -513,79 +602,186 @@ export function Records() {
                           <FileText size={14} /> Imprimir Registro
                         </button>
 
-                        <div className="dropdown-container">
-                          <button
-                            className="action-btn"
-                            disabled={updatingId === atendimento.id}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActiveDropdown(activeDropdown === atendimento.id ? null : atendimento.id);
-                            }}
-                          >
-                            <MoreVertical size={20} />
-                          </button>
+                        {(canModify || (atendimento.valorPendente == null || atendimento.valorPendente > 0)) && (
+                          <div className="dropdown-container">
+                            <button
+                              className="action-btn"
+                              disabled={updatingId === atendimento.id}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveDropdown(activeDropdown === atendimento.id ? null : atendimento.id);
+                              }}
+                            >
+                              <MoreVertical size={20} />
+                            </button>
 
-                          {activeDropdown === atendimento.id && (
-                            <div className="dropdown-menu" style={{ right: 0, top: '100%' }}>
-
-                              <>
-                                {atendimento.valorPendente !== undefined && atendimento.valorPendente > 0 && (
-                                  <>
-                                    <button
-                                      className="dropdown-item"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleOpenRegisterPayment(atendimento);
-                                      }}
-                                      disabled={updatingId === atendimento.id}
-                                    >
-                                      <DollarSign size={16} /> Registrar Pagamento
-                                    </button>
-                                    <div style={{ borderTop: '1px solid var(--border-subtle)', margin: '4px 0' }}></div>
-                                  </>
-                                )}
-                                <button
-                                  className="dropdown-item"
-                                  onClick={() => handleEdit(atendimento.id)}
-                                  disabled={updatingId === atendimento.id}
-                                >
-                                  <Edit size={16} /> Editar
-                                </button>
-                                <div style={{ borderTop: '1px solid var(--border-subtle)', margin: '4px 0' }}></div>
-                                <div className="p-2">
-                                  <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '4px', paddingLeft: '8px' }}>Alterar Status</p>
-                                  <div className="flex-col gap-1">
-                                    {Object.keys(statusMap).map(status => (
+                            {activeDropdown === atendimento.id && (
+                              <div className="dropdown-menu" style={{ right: 0, top: '100%' }}>
+                                <>
+                                  {(atendimento.valorPendente == null || atendimento.valorPendente > 0) && (
+                                    <>
                                       <button
-                                        key={status}
                                         className="dropdown-item"
-                                        onClick={() => handleStatusUpdate(atendimento.id, status)}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleOpenRegisterPayment(atendimento);
+                                        }}
                                         disabled={updatingId === atendimento.id}
-                                        style={{ padding: '6px 8px' }}
                                       >
-                                        {status}
+                                        <DollarSign size={16} /> Registrar Pagamento
                                       </button>
-                                    ))}
-                                  </div>
-                                </div>
-                                <div style={{ borderTop: '1px solid var(--border-subtle)', margin: '4px 0' }}></div>
-                                <button
-                                  className="dropdown-item danger"
-                                  onClick={() => handleDelete(atendimento.id)}
-                                  disabled={updatingId === atendimento.id}
-                                >
-                                  <Trash2 size={16} /> Excluir
-                                </button>
-                              </>
-                            </div>
-                          )}
-                        </div>
+                                      {canModify && <div style={{ borderTop: '1px solid var(--border-subtle)', margin: '4px 0' }}></div>}
+                                    </>
+                                  )}
+                                  
+                                  {canModify && (
+                                    <>
+                                      <button
+                                        className="dropdown-item"
+                                        onClick={() => handleEdit(atendimento.id)}
+                                        disabled={updatingId === atendimento.id}
+                                      >
+                                        <Edit size={16} /> Editar
+                                      </button>
+                                      <div style={{ borderTop: '1px solid var(--border-subtle)', margin: '4px 0' }}></div>
+                                      <div className="p-2">
+                                        <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '4px', paddingLeft: '8px' }}>Alterar Status</p>
+                                        <div className="flex-col gap-1">
+                                          {Object.keys(statusMap).map(status => (
+                                            <button
+                                              key={status}
+                                              className="dropdown-item"
+                                              onClick={() => handleStatusUpdate(atendimento.id, status)}
+                                              disabled={updatingId === atendimento.id}
+                                              style={{ padding: '6px 8px' }}
+                                            >
+                                              {status}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      </div>
+                                      <div style={{ borderTop: '1px solid var(--border-subtle)', margin: '4px 0' }}></div>
+                                      <button
+                                        className="dropdown-item danger"
+                                        onClick={() => handleDelete(atendimento.id)}
+                                        disabled={updatingId === atendimento.id}
+                                      >
+                                        <Trash2 size={16} /> Excluir
+                                      </button>
+                                    </>
+                                  )}
+                                </>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
 
                     <div style={{ padding: '16px', background: 'var(--bg-main)', borderRadius: '12px', border: '1px solid var(--border-subtle)' }}>
                       <p style={{ whiteSpace: 'pre-wrap', color: 'var(--text-main)', fontSize: '1rem', lineHeight: '1.6' }}>{atendimento.descricao}</p>
                     </div>
+
+                    {atendimento.valorAtendimento > 0 && (
+                      <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border-subtle)' }}>
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          style={{ padding: '4px 8px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+                          onClick={() => handleTogglePayments(atendimento.id)}
+                        >
+                          <DollarSign size={14} /> 
+                          {expandedPayments[atendimento.id] ? 'Ocultar Histórico de Pagamentos' : 'Ver Histórico de Pagamentos'}
+                        </button>
+
+                        {expandedPayments[atendimento.id] && (
+                          <div style={{ marginTop: '12px' }}>
+                            {loadingPayments[atendimento.id] ? (
+                              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Carregando pagamentos...</p>
+                            ) : paymentsMap[atendimento.id] && paymentsMap[atendimento.id].length > 0 ? (
+                              <div className="flex-col gap-2" style={{ marginTop: '8px' }}>
+                                {paymentsMap[atendimento.id].map((pagamento) => (
+                                  <div
+                                    key={pagamento.id}
+                                    style={{
+                                      display: 'flex',
+                                      justifyContent: 'space-between',
+                                      alignItems: 'center',
+                                      padding: '10px 14px',
+                                      background: 'var(--bg-surface-hover)',
+                                      borderRadius: '8px',
+                                      border: '1px solid var(--border-subtle)',
+                                      fontSize: '0.85rem',
+                                      flexWrap: 'wrap',
+                                      gap: '8px'
+                                    }}
+                                  >
+                                    <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
+                                      <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>
+                                        R$ {pagamento.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                      </span>
+                                      <span style={{ color: 'var(--text-muted)' }}>
+                                        Vencimento: {new Date(pagamento.dataVencimento).toLocaleDateString('pt-BR')}
+                                      </span>
+                                      <span style={{ color: 'var(--text-muted)' }}>
+                                        Forma: {pagamento.formaPagamento}
+                                      </span>
+                                      {pagamento.observacao && (
+                                        <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }} title={pagamento.observacao}>
+                                          ({pagamento.observacao.length > 30 ? `${pagamento.observacao.substring(0, 30)}...` : pagamento.observacao})
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                      <span className={`status-badge ${pagamento.statusPagamento.toLowerCase().replace(/\s/g, '')}`} style={{ fontSize: '0.7rem', padding: '2px 6px' }}>
+                                        {pagamento.statusPagamento}
+                                      </span>
+                                      <div style={{ display: 'flex', gap: '6px' }}>
+                                        {pagamento.statusPagamento === 'Pendente' && (
+                                          <>
+                                            <button
+                                              type="button"
+                                              className="action-btn"
+                                              style={{ padding: '4px', color: '#10b981' }}
+                                              onClick={() => handleMarkPaymentAsPaid(pagamento.id, atendimento.id)}
+                                              title="Marcar como Pago"
+                                            >
+                                              <Check size={14} />
+                                            </button>
+                                            <button
+                                              type="button"
+                                              className="action-btn"
+                                              style={{ padding: '4px', color: 'var(--danger)' }}
+                                              onClick={() => handleCancelPaymentItem(pagamento.id, atendimento.id)}
+                                              title="Cancelar Pagamento"
+                                            >
+                                              <X size={14} />
+                                            </button>
+                                          </>
+                                        )}
+                                        <button
+                                          type="button"
+                                          className="action-btn"
+                                          style={{ padding: '4px', color: 'var(--text-muted)' }}
+                                          onClick={() => handleDeletePaymentItem(pagamento.id, atendimento.id)}
+                                          title="Excluir Pagamento"
+                                        >
+                                          <Trash2 size={14} />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '8px 0 0 0' }}>
+                                Nenhum pagamento registrado para este atendimento.
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               );
