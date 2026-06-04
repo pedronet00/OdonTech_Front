@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FilePlus, Activity, ArrowLeft, Calendar, User, Hash, MoreVertical, Edit, Trash2, X, File, Download, Image, Upload, FileText } from 'lucide-react';
+import { FilePlus, Activity, ArrowLeft, Calendar, User, Hash, MoreVertical, Edit, Trash2, X, File, Download, Image, Upload, FileText, DollarSign } from 'lucide-react';
 import { useAuth } from '../../application/contexts/AuthContext';
 import ApiClient from '../../infrastructure/api/apiClient';
 import type { Atendimento, Patient } from '../../domain/models/types';
@@ -27,9 +27,20 @@ export function Records() {
     dataAtendimento: new Date().toISOString().split('T')[0],
     descricao: '',
     dente: 0,
-    valor: '',
+    valorAtendimento: 0,
     statusPagamento: '',
     formaPagamento: ''
+  });
+
+  const [isRegisteringPayment, setIsRegisteringPayment] = useState(false);
+  const [selectedAtendimentoForPayment, setSelectedAtendimentoForPayment] = useState<Atendimento | null>(null);
+  const [paymentData, setPaymentData] = useState({
+    valor: '',
+    dataVencimento: new Date().toISOString().split('T')[0],
+    statusPagamento: StatusPagamentoEnum.Pendente.toString(),
+    formaPagamento: FormaPagamentoEnum.PIX.toString(),
+    observacao: '',
+    atendimentoId: ''
   });
 
   // File management state
@@ -209,6 +220,7 @@ export function Records() {
         profissionalId: editingAtendimento.profissionalId,
         dataAtendimento: editingAtendimento.dataAtendimento,
         descricao: editingAtendimento.descricao,
+        valorAtendimento: editingAtendimento.valorAtendimento,
         dente: editingAtendimento.dente || 0,
         tipoAtendimento: tipoMap[editingAtendimento.tipoAtendimento] || 1,
         statusAtendimento: statusMap[editingAtendimento.statusAtendimento] || 1
@@ -230,13 +242,6 @@ export function Records() {
     e.preventDefault();
     if (!id || !user) return;
 
-    if (newAtendimento.valor) {
-      if (!newAtendimento.formaPagamento || !newAtendimento.statusPagamento) {
-        toast.error('Por favor, preencha a forma de pagamento e o status do pagamento.');
-        return;
-      }
-    }
-
     try {
       setIsSaving(true);
       const payload = {
@@ -247,7 +252,7 @@ export function Records() {
         dente: newAtendimento.dente || 0,
         tipoAtendimento: tipoMap[newAtendimento.tipoAtendimento] || 1,
         statusAtendimento: statusMap[newAtendimento.statusAtendimento] || 1,
-        valorAtendimento: newAtendimento.valor ? Number(newAtendimento.valor) : null,
+        valorAtendimento: newAtendimento.valorAtendimento ? Number(newAtendimento.valorAtendimento) : null,
         formaPagamento: newAtendimento.formaPagamento ? Number(newAtendimento.formaPagamento) : null,
         statusPagamento: newAtendimento.statusPagamento ? Number(newAtendimento.statusPagamento) : null
       };
@@ -262,7 +267,7 @@ export function Records() {
         dataAtendimento: new Date().toISOString().split('T')[0],
         descricao: '',
         dente: 0,
-        valor: '',
+        valorAtendimento: 0,
         statusPagamento: '',
         formaPagamento: ''
       });
@@ -287,6 +292,48 @@ export function Records() {
       toast.error(err.message || 'Erro ao excluir atendimento.');
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  const handleOpenRegisterPayment = (atendimento: Atendimento) => {
+    setPaymentData({
+      valor: atendimento.valorPendente !== undefined ? atendimento.valorPendente.toString() : '',
+      dataVencimento: new Date().toISOString().split('T')[0],
+      statusPagamento: StatusPagamentoEnum.Pendente.toString(),
+      formaPagamento: FormaPagamentoEnum.PIX.toString(),
+      observacao: `Pagamento referente ao atendimento: ${atendimento.tipoAtendimento} - ${new Date(atendimento.dataAtendimento).toLocaleDateString('pt-BR')}`,
+      atendimentoId: atendimento.id
+    });
+    setSelectedAtendimentoForPayment(atendimento);
+    setIsRegisteringPayment(true);
+    setActiveDropdown(null);
+  };
+
+  const handleRegisterPayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!id) return;
+
+    try {
+      setIsSaving(true);
+      const payload = {
+        pacienteId: id,
+        atendimentoId: paymentData.atendimentoId,
+        valor: Number(paymentData.valor),
+        dataVencimento: paymentData.dataVencimento,
+        statusPagamento: Number(paymentData.statusPagamento),
+        formaPagamento: Number(paymentData.formaPagamento),
+        observacao: paymentData.observacao || null
+      };
+
+      await ApiClient.post('/pagamentos', payload);
+
+      toast.success('Pagamento registrado com sucesso!');
+      setIsRegisteringPayment(false);
+      await fetchData();
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao registrar pagamento.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -432,8 +479,6 @@ export function Records() {
             </div>
           ) : atendimentos.length > 0 ? (
             atendimentos.map((atendimento) => {
-              const isFinalized = atendimento.statusAtendimento === 'Concluido' || atendimento.statusAtendimento === 'Cancelado';
-
               return (
                 <div
                   key={atendimento.id}
@@ -456,11 +501,6 @@ export function Records() {
                           <div className="flex-row items-center gap-4" style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
                             <span className="flex-row items-center gap-1"><Calendar size={14} /> {new Date(atendimento.dataAtendimento).toLocaleDateString('pt-BR')}</span>
                             <span className="flex-row items-center gap-1"><User size={14} /> {atendimento.nomeProfissional}</span>
-                            {atendimento.dente && (
-                              <span className="flex-row items-center gap-1">
-                                <Hash size={14} /> Dente: <span className="dente-badge">{atendimento.dente}</span>
-                              </span>
-                            )}
                           </div>
                         </div>
                       </div>
@@ -487,47 +527,56 @@ export function Records() {
 
                           {activeDropdown === atendimento.id && (
                             <div className="dropdown-menu" style={{ right: 0, top: '100%' }}>
-                              {!isFinalized ? (
-                                <>
-                                  <button
-                                    className="dropdown-item"
-                                    onClick={() => handleEdit(atendimento.id)}
-                                    disabled={updatingId === atendimento.id}
-                                  >
-                                    <Edit size={16} /> Editar
-                                  </button>
-                                  <div style={{ borderTop: '1px solid var(--border-subtle)', margin: '4px 0' }}></div>
-                                  <div className="p-2">
-                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '4px', paddingLeft: '8px' }}>Alterar Status</p>
-                                    <div className="flex-col gap-1">
-                                      {Object.keys(statusMap).map(status => (
-                                        <button
-                                          key={status}
-                                          className="dropdown-item"
-                                          onClick={() => handleStatusUpdate(atendimento.id, status)}
-                                          disabled={updatingId === atendimento.id}
-                                          style={{ padding: '6px 8px' }}
-                                        >
-                                          {status}
-                                        </button>
-                                      ))}
-                                    </div>
+
+                              <>
+                                {atendimento.valorPendente !== undefined && atendimento.valorPendente > 0 && (
+                                  <>
+                                    <button
+                                      className="dropdown-item"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleOpenRegisterPayment(atendimento);
+                                      }}
+                                      disabled={updatingId === atendimento.id}
+                                    >
+                                      <DollarSign size={16} /> Registrar Pagamento
+                                    </button>
+                                    <div style={{ borderTop: '1px solid var(--border-subtle)', margin: '4px 0' }}></div>
+                                  </>
+                                )}
+                                <button
+                                  className="dropdown-item"
+                                  onClick={() => handleEdit(atendimento.id)}
+                                  disabled={updatingId === atendimento.id}
+                                >
+                                  <Edit size={16} /> Editar
+                                </button>
+                                <div style={{ borderTop: '1px solid var(--border-subtle)', margin: '4px 0' }}></div>
+                                <div className="p-2">
+                                  <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '4px', paddingLeft: '8px' }}>Alterar Status</p>
+                                  <div className="flex-col gap-1">
+                                    {Object.keys(statusMap).map(status => (
+                                      <button
+                                        key={status}
+                                        className="dropdown-item"
+                                        onClick={() => handleStatusUpdate(atendimento.id, status)}
+                                        disabled={updatingId === atendimento.id}
+                                        style={{ padding: '6px 8px' }}
+                                      >
+                                        {status}
+                                      </button>
+                                    ))}
                                   </div>
-                                  <div style={{ borderTop: '1px solid var(--border-subtle)', margin: '4px 0' }}></div>
-                                  <button
-                                    className="dropdown-item danger"
-                                    onClick={() => handleDelete(atendimento.id)}
-                                    disabled={updatingId === atendimento.id}
-                                  >
-                                    <Trash2 size={16} /> Excluir
-                                  </button>
-                                </>
-                              ) : (
-                                <div className="p-3" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', width: '180px' }}>
-                                  <FileText size={16} style={{ marginBottom: '8px', color: 'var(--primary)' }} />
-                                  <p>Este registro está <strong>{atendimento.statusAtendimento}</strong> e não pode mais ser alterado.</p>
                                 </div>
-                              )}
+                                <div style={{ borderTop: '1px solid var(--border-subtle)', margin: '4px 0' }}></div>
+                                <button
+                                  className="dropdown-item danger"
+                                  onClick={() => handleDelete(atendimento.id)}
+                                  disabled={updatingId === atendimento.id}
+                                >
+                                  <Trash2 size={16} /> Excluir
+                                </button>
+                              </>
                             </div>
                           )}
                         </div>
@@ -650,7 +699,7 @@ export function Records() {
                     </div>
                   </div>
 
-                  <div className="grid-cols-2">
+                  <div className="grid-cols-3">
                     <div className="form-group">
                       <label className="input-label">Data</label>
                       <input
@@ -671,15 +720,6 @@ export function Records() {
                         placeholder="Ex: 21"
                       />
                     </div>
-                  </div>
-
-                  <div style={{ margin: '20px 0 10px 0', borderTop: '1px solid var(--border-subtle)', paddingTop: '16px' }}>
-                    <h3 style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '8px' }}>
-                      Informações Financeiras (Opcional)
-                    </h3>
-                  </div>
-
-                  <div className="grid-cols-3 gap-4" style={{ marginBottom: '16px' }}>
                     <div className="form-group">
                       <label className="input-label">Valor (R$)</label>
                       <input
@@ -688,42 +728,9 @@ export function Records() {
                         min="0"
                         className="input-field"
                         placeholder="0,00"
-                        value={newAtendimento.valor}
-                        onChange={e => setNewAtendimento({ ...newAtendimento, valor: e.target.value })}
+                        value={newAtendimento.valorAtendimento || ''}
+                        onChange={e => setNewAtendimento({ ...newAtendimento, valorAtendimento: Number(e.target.value) })}
                       />
-                    </div>
-                    <div className="form-group">
-                      <label className="input-label">
-                        Forma de Pagamento {newAtendimento.valor ? <span style={{ color: '#ef4444' }}>*</span> : ''}
-                      </label>
-                      <select
-                        className="input-field"
-                        value={newAtendimento.formaPagamento}
-                        onChange={e => setNewAtendimento({ ...newAtendimento, formaPagamento: e.target.value })}
-                        required={!!newAtendimento.valor}
-                      >
-                        <option value="">Selecione...</option>
-                        <option value={FormaPagamentoEnum.PIX}>PIX</option>
-                        <option value={FormaPagamentoEnum.Debito}>Débito</option>
-                        <option value={FormaPagamentoEnum.Credito}>Crédito</option>
-                        <option value={FormaPagamentoEnum.Dinheiro}>Dinheiro</option>
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label className="input-label">
-                        Status do Pagamento {newAtendimento.valor ? <span style={{ color: '#ef4444' }}>*</span> : ''}
-                      </label>
-                      <select
-                        className="input-field"
-                        value={newAtendimento.statusPagamento}
-                        onChange={e => setNewAtendimento({ ...newAtendimento, statusPagamento: e.target.value })}
-                        required={!!newAtendimento.valor}
-                      >
-                        <option value="">Selecione...</option>
-                        <option value={StatusPagamentoEnum.Pendente}>Pendente</option>
-                        <option value={StatusPagamentoEnum.Pago}>Pago</option>
-                        <option value={StatusPagamentoEnum.Cancelado}>Cancelado</option>
-                      </select>
                     </div>
                   </div>
 
@@ -796,7 +803,7 @@ export function Records() {
                     </div>
                   </div>
 
-                  <div className="grid-cols-2">
+                  <div className="grid-cols-3">
                     <div className="form-group">
                       <label className="input-label">Data</label>
                       <input
@@ -815,6 +822,18 @@ export function Records() {
                         value={editingAtendimento.dente || ''}
                         onChange={e => setEditingAtendimento({ ...editingAtendimento, dente: parseInt(e.target.value) })}
                         placeholder="Ex: 21"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="input-label">Valor (R$)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        className="input-field"
+                        placeholder="0,00"
+                        value={editingAtendimento.valorAtendimento}
+                        onChange={e => setEditingAtendimento({ ...editingAtendimento, valorAtendimento: Number(e.target.value) })}
                       />
                     </div>
                   </div>
@@ -837,6 +856,114 @@ export function Records() {
                 </button>
                 <button type="submit" className="btn btn-primary" disabled={isSaving}>
                   {isSaving ? 'Salvando...' : 'Salvar Alterações'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Registro de Pagamento */}
+      {isRegisteringPayment && (
+        <div className="modal-overlay" onClick={() => setIsRegisteringPayment(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Registrar Pagamento</h2>
+              <button onClick={() => setIsRegisteringPayment(false)} className="action-btn">
+                <X size={24} />
+              </button>
+            </div>
+            <form onSubmit={handleRegisterPayment}>
+              <div className="modal-body">
+                {selectedAtendimentoForPayment && (
+                  <div className="flex-row justify-between" style={{ padding: '12px 16px', background: 'var(--bg-surface-hover)', borderRadius: '8px', marginBottom: '16px', border: '1px solid var(--border-subtle)' }}>
+                    <div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Valor do Atendimento</div>
+                      <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                        R$ {selectedAtendimentoForPayment.valorAtendimento?.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0,00'}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Valor Pendente</div>
+                      <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--danger)' }}>
+                        R$ {selectedAtendimentoForPayment.valorPendente?.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0,00'}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div className="form-group-container">
+                  <div className="grid-cols-2">
+                    <div className="form-group">
+                      <label className="input-label">Valor (R$) <span style={{ color: '#ef4444' }}>*</span></label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        className="input-field"
+                        placeholder="0,00"
+                        value={paymentData.valor}
+                        onChange={e => setPaymentData({ ...paymentData, valor: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="input-label">Data de Vencimento <span style={{ color: '#ef4444' }}>*</span></label>
+                      <input
+                        type="date"
+                        className="input-field"
+                        value={paymentData.dataVencimento}
+                        onChange={e => setPaymentData({ ...paymentData, dataVencimento: e.target.value })}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid-cols-2">
+                    <div className="form-group">
+                      <label className="input-label">Forma de Pagamento</label>
+                      <select
+                        className="input-field"
+                        value={paymentData.formaPagamento}
+                        onChange={e => setPaymentData({ ...paymentData, formaPagamento: e.target.value })}
+                      >
+                        <option value={FormaPagamentoEnum.PIX}>PIX</option>
+                        <option value={FormaPagamentoEnum.Debito}>Débito</option>
+                        <option value={FormaPagamentoEnum.Credito}>Crédito</option>
+                        <option value={FormaPagamentoEnum.Dinheiro}>Dinheiro</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label className="input-label">Status de Pagamento</label>
+                      <select
+                        className="input-field"
+                        value={paymentData.statusPagamento}
+                        onChange={e => setPaymentData({ ...paymentData, statusPagamento: e.target.value })}
+                      >
+                        <option value={StatusPagamentoEnum.Pendente}>Pendente</option>
+                        <option value={StatusPagamentoEnum.Pago}>Pago</option>
+                        <option value={StatusPagamentoEnum.Cancelado}>Cancelado</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="input-label">Observação</label>
+                    <input
+                      type="text"
+                      className="input-field"
+                      placeholder="Ex: referente ao procedimento de restauração"
+                      value={paymentData.observacao}
+                      onChange={e => setPaymentData({ ...paymentData, observacao: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setIsRegisteringPayment(false)}>
+                  Cancelar
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={isSaving}>
+                  {isSaving ? 'Salvando...' : 'Confirmar Lançamento'}
                 </button>
               </div>
             </form>

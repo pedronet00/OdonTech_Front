@@ -38,6 +38,8 @@ export interface Atendimento {
   dente?: number;
   tipoAtendimento: string;
   statusAtendimento: string;
+  valorAtendimento: number;
+  valorPendente: number;
   dataCriacao: string;
   dataAlteracao: string | null;
 }
