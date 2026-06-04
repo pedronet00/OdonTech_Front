@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FilePlus, Activity, ArrowLeft, Calendar, User, Hash, MoreVertical, Edit, Trash2, X, File, Download, Image, Upload, FileText, DollarSign } from 'lucide-react';
+import { FilePlus, Activity, ArrowLeft, Calendar, User, MoreVertical, Edit, Trash2, X, File, Download, Image, Upload, FileText, DollarSign } from 'lucide-react';
 import { useAuth } from '../../application/contexts/AuthContext';
 import ApiClient from '../../infrastructure/api/apiClient';
 import type { Atendimento, Patient } from '../../domain/models/types';
