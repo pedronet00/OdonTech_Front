@@ -105,6 +105,17 @@ const getDoencaSanguineaId = (val: any): number => {
   return mapping[valStr] || 0;
 };
 
+const formatCriacaoDate = (dateStr?: string | null) => {
+  if (!dateStr || dateStr.startsWith('0001-01-01')) return null;
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return null;
+    return date.toLocaleDateString('pt-BR') + ' às ' + date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return null;
+  }
+};
+
 export function Patients() {
   const { user, token } = useAuth();
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -1312,13 +1323,27 @@ export function Patients() {
                   </div>
                 </div>
               </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setEditingPatient(null)}>
-                  Cancelar
-                </button>
-                <button type="submit" className="btn btn-primary" disabled={isSaving}>
-                  {isSaving ? 'Salvando...' : 'Salvar Alterações'}
-                </button>
+              <div className="modal-footer" style={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'left', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  {editingPatient.nomeUsuarioCriacao && (
+                    <div>
+                      Cadastrado por <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{editingPatient.nomeUsuarioCriacao}</span>
+                    </div>
+                  )}
+                  {formatCriacaoDate(editingPatient.dataCriacao) && (
+                    <div>
+                      Data de cadastro: <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{formatCriacaoDate(editingPatient.dataCriacao)}</span>
+                    </div>
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button type="button" className="btn btn-secondary" onClick={() => setEditingPatient(null)}>
+                    Cancelar
+                  </button>
+                  <button type="submit" className="btn btn-primary" disabled={isSaving}>
+                    {isSaving ? 'Salvando...' : 'Salvar Alterações'}
+                  </button>
+                </div>
               </div>
             </form>
           </div>

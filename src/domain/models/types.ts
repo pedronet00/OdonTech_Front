@@ -25,6 +25,8 @@ export interface Patient {
   profissao?: string | null;
   nomeContatoEmergencia?: string | null;
   telefoneContatoEmergencia?: string | null;
+  nomeUsuarioCriacao?: string | null;
+  dataCriacao?: string | null;
 }
 
 export interface Atendimento {
@@ -42,6 +44,7 @@ export interface Atendimento {
   valorPendente: number;
   dataCriacao: string;
   dataAlteracao: string | null;
+  nomeUsuarioCriacao?: string | null;
 }
 
 export interface RecordEntry {

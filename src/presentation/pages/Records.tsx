@@ -7,6 +7,17 @@ import type { Atendimento, Patient, Pagamento } from '../../domain/models/types'
 import { FormaPagamentoEnum, StatusPagamentoEnum } from '../../domain/models/types';
 import toast from 'react-hot-toast';
 
+const formatCriacaoDate = (dateStr?: string | null) => {
+  if (!dateStr || dateStr.startsWith('0001-01-01')) return null;
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return null;
+    return date.toLocaleDateString('pt-BR') + ' às ' + date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return null;
+  }
+};
+
 export function Records() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -577,6 +588,16 @@ export function Records() {
                             <span className="flex-row items-center gap-1"><Calendar size={14} /> {new Date(atendimento.dataAtendimento).toLocaleDateString('pt-BR')}</span>
                             <span className="flex-row items-center gap-1"><User size={14} /> {atendimento.nomeProfissional}</span>
                           </div>
+                          {(atendimento.nomeUsuarioCriacao || formatCriacaoDate(atendimento.dataCriacao)) && (
+                            <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '4px', display: 'flex', flexDirection: 'row', flexWrap: 'wrap', columnGap: '16px', rowGap: '4px' }}>
+                              {atendimento.nomeUsuarioCriacao && (
+                                <span>Cadastrado por <strong style={{ color: 'var(--text-main)' }}>{atendimento.nomeUsuarioCriacao}</strong></span>
+                              )}
+                              {formatCriacaoDate(atendimento.dataCriacao) && (
+                                <span>Data de cadastro: <strong style={{ color: 'var(--text-main)' }}>{formatCriacaoDate(atendimento.dataCriacao)}</strong></span>
+                              )}
+                            </div>
+                          )}
                           {(atendimento.valorAtendimento != null || (atendimento.valorPendente != null && atendimento.valorPendente > 0)) && (
                             <div className="flex-row items-center gap-4" style={{ fontSize: '0.85rem', marginTop: '6px' }}>
                               {atendimento.valorAtendimento != null && (
@@ -1046,13 +1067,27 @@ export function Records() {
                   </div>
                 </div>
               </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setEditingAtendimento(null)}>
-                  Cancelar
-                </button>
-                <button type="submit" className="btn btn-primary" disabled={isSaving}>
-                  {isSaving ? 'Salvando...' : 'Salvar Alterações'}
-                </button>
+              <div className="modal-footer" style={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'left', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  {editingAtendimento.nomeUsuarioCriacao && (
+                    <div>
+                      Cadastrado por <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{editingAtendimento.nomeUsuarioCriacao}</span>
+                    </div>
+                  )}
+                  {formatCriacaoDate(editingAtendimento.dataCriacao) && (
+                    <div>
+                      Data de cadastro: <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{formatCriacaoDate(editingAtendimento.dataCriacao)}</span>
+                    </div>
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button type="button" className="btn btn-secondary" onClick={() => setEditingAtendimento(null)}>
+                    Cancelar
+                  </button>
+                  <button type="submit" className="btn btn-primary" disabled={isSaving}>
+                    {isSaving ? 'Salvando...' : 'Salvar Alterações'}
+                  </button>
+                </div>
               </div>
             </form>
           </div>
