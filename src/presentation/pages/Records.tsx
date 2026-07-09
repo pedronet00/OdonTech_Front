@@ -56,9 +56,9 @@ export function Records() {
 
   const [permiteAlterarConcluidos, setPermiteAlterarConcluidos] = useState(false);
 
-  const [expandedPayments, setExpandedPayments] = useState<{[key: string]: boolean}>({});
-  const [loadingPayments, setLoadingPayments] = useState<{[key: string]: boolean}>({});
-  const [paymentsMap, setPaymentsMap] = useState<{[key: string]: Pagamento[]}>({});
+  const [expandedPayments, setExpandedPayments] = useState<{ [key: string]: boolean }>({});
+  const [loadingPayments, setLoadingPayments] = useState<{ [key: string]: boolean }>({});
+  const [paymentsMap, setPaymentsMap] = useState<{ [key: string]: Pagamento[] }>({});
 
   // File management state
   const [activeTab, setActiveTab] = useState<'timeline' | 'files'>('timeline');
@@ -639,22 +639,19 @@ export function Records() {
                             {activeDropdown === atendimento.id && (
                               <div className="dropdown-menu" style={{ right: 0, top: '100%' }}>
                                 <>
-                                  {(atendimento.valorPendente == null || atendimento.valorPendente > 0) && (
-                                    <>
-                                      <button
-                                        className="dropdown-item"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleOpenRegisterPayment(atendimento);
-                                        }}
-                                        disabled={updatingId === atendimento.id}
-                                      >
-                                        <DollarSign size={16} /> Registrar Pagamento
-                                      </button>
-                                      {canModify && <div style={{ borderTop: '1px solid var(--border-subtle)', margin: '4px 0' }}></div>}
-                                    </>
-                                  )}
-                                  
+                                  <button
+                                    className="dropdown-item"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleOpenRegisterPayment(atendimento);
+                                    }}
+                                    disabled={updatingId === atendimento.id}
+                                  >
+                                    <DollarSign size={16} /> Registrar Pagamento
+                                  </button>
+                                  {canModify && <div style={{ borderTop: '1px solid var(--border-subtle)', margin: '4px 0' }}></div>}
+
+
                                   {canModify && (
                                     <>
                                       <button
@@ -711,7 +708,7 @@ export function Records() {
                           style={{ padding: '4px 8px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '6px' }}
                           onClick={() => handleTogglePayments(atendimento.id)}
                         >
-                          <DollarSign size={14} /> 
+                          <DollarSign size={14} />
                           {expandedPayments[atendimento.id] ? 'Ocultar Histórico de Pagamentos' : 'Ver Histórico de Pagamentos'}
                         </button>
 
