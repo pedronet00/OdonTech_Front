@@ -29,7 +29,7 @@ export function Records() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [editingAtendimento, setEditingAtendimento] = useState<Atendimento | null>(null);
-  const [printingAtendimento, setPrintingAtendimento] = useState<Atendimento | null>(null);
+  // const [printingAtendimento, setPrintingAtendimento] = useState<Atendimento | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [newAtendimento, setNewAtendimento] = useState({
@@ -1239,7 +1239,7 @@ export function Records() {
         </div>
       )}
 
-      {/* Estrutura de Impressão (Invisível no navegador, visível no Print) */}
+      {/* Estrutura de Impressão (Invisível no navegador, visível no Print)
       {printingAtendimento && (
         <div className="printable-record" id="printable-content">
           <div className="print-header">
@@ -1353,7 +1353,7 @@ export function Records() {
             <p>OdonTech - Sistema de Gestão Odontológica | Documento restrito para fins clínicos.</p>
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 }
