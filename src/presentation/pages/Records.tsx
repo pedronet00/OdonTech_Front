@@ -422,12 +422,12 @@ export function Records() {
     }
   };
 
-  const handlePrint = (atendimento: Atendimento) => {
-    setPrintingAtendimento(atendimento);
-    setTimeout(() => {
-      window.print();
-    }, 200);
-  };
+  // const handlePrint = (atendimento: Atendimento) => {
+  //   setPrintingAtendimento(atendimento);
+  //   setTimeout(() => {
+  //     window.print();
+  //   }, 200);
+  // };
 
   return (
     <div className="animate-fade-in" onClick={() => activeDropdown && setActiveDropdown(null)}>
