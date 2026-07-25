@@ -749,7 +749,7 @@ export function Records() {
                           onClick={() => handleTogglePayments(atendimento.id)}
                         >
                           <DollarSign size={14} />
-                          {expandedPayments[atendimento.id] ? 'Ocultar Histórico de Pagamentos' : 'Ver Histórico de Pagamentos'}
+                          {expandedPayments[atendimento.id] ? 'Ocultar pagamentos' : 'Histórico de pagamentos do atendimento'}
                         </button>
 
                         {expandedPayments[atendimento.id] && (
