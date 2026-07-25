@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { DollarSign, TrendingUp, CreditCard, Calendar, Briefcase, PieChart, ArrowUpRight } from 'lucide-react';
+import { DollarSign, TrendingUp, CreditCard, Calendar, Briefcase, PieChart, ArrowUpRight, X } from 'lucide-react';
 import { useAuth } from '../../application/contexts/AuthContext';
 import ApiClient from '../../infrastructure/api/apiClient';
 import type { FinanceDashboard, MonthData } from '../../domain/models/types';
@@ -10,6 +10,7 @@ export function Finance() {
   const [dashboard, setDashboard] = useState<FinanceDashboard | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState<MonthData | null>(null);
+  const [filterDate, setFilterDate] = useState<string>('');
 
   const currentYear = new Date().getFullYear();
 
@@ -18,14 +19,27 @@ export function Finance() {
       if (!user?.clinica_id) return;
       try {
         setLoading(true);
-        const data = await ApiClient.get<FinanceDashboard>(`/dashboard/financeiro/${user.clinica_id}/${currentYear}`);
+        const params = new URLSearchParams();
+        if (filterDate) {
+          params.append('data', filterDate);
+        }
+        const queryString = params.toString() ? `?${params.toString()}` : '';
+        const data = await ApiClient.get<FinanceDashboard>(`/dashboard/financeiro/${user.clinica_id}/${currentYear}${queryString}`);
         setDashboard(data);
 
         // Select current month or first available
         if (data.meses.length > 0) {
-          const currentMonthIdx = new Date().getMonth() + 1;
-          const month = data.meses.find(m => m.mes === currentMonthIdx) || data.meses[0];
-          setSelectedMonth(month);
+          if (filterDate) {
+            const filterMonth = new Date(filterDate).getMonth() + 1;
+            const month = data.meses.find(m => m.mes === filterMonth) || data.meses[0];
+            setSelectedMonth(month);
+          } else {
+            const currentMonthIdx = new Date().getMonth() + 1;
+            const month = data.meses.find(m => m.mes === currentMonthIdx) || data.meses[0];
+            setSelectedMonth(month);
+          }
+        } else {
+          setSelectedMonth(null);
         }
       } catch (err: any) {
         toast.error(err.message || 'Erro ao carregar dados financeiros.');
@@ -36,7 +50,7 @@ export function Finance() {
     };
 
     fetchDashboard();
-  }, [user?.clinica_id, token, currentYear]);
+  }, [user?.clinica_id, token, currentYear, filterDate]);
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
@@ -50,15 +64,7 @@ export function Finance() {
     );
   }
 
-  if (!dashboard || dashboard.meses.length === 0) {
-    return (
-      <div className="flex-col items-center justify-center glass-panel" style={{ padding: '64px' }}>
-        <DollarSign size={48} style={{ color: 'var(--text-muted)', marginBottom: '16px' }} />
-        <h3>Sem dados para o ano de {currentYear}</h3>
-        <p style={{ color: 'var(--text-muted)' }}>Comece a registrar pagamentos para ver seu dashboard.</p>
-      </div>
-    );
-  }
+  const hasData = dashboard && dashboard.meses.length > 0;
 
   return (
     <div className="animate-fade-in">
@@ -67,25 +73,68 @@ export function Finance() {
           <h1 style={{ fontSize: '2rem', marginBottom: '4px' }}>Dashboard Financeiro</h1>
           <p style={{ color: 'var(--text-muted)' }}>Acompanhe a saúde financeira da sua clínica em {currentYear}</p>
         </div>
-        <div className="flex-row gap-3">
-          <select
-            className="input-field"
-            style={{ width: '180px' }}
-            value={selectedMonth?.mes}
-            onChange={(e) => {
-              const month = dashboard.meses.find(m => m.mes === parseInt(e.target.value));
-              if (month) setSelectedMonth(month);
-            }}
-          >
-            {dashboard.meses.map(m => (
-              <option key={m.mes} value={m.mes}>{m.nomeMes.charAt(0).toUpperCase() + m.nomeMes.slice(1)}</option>
-            ))}
-          </select>
-          <button className="btn btn-primary">
-            <Calendar size={18} /> Exportar
-          </button>
+        <div className="flex-row gap-3 items-center">
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <input
+              type="date"
+              className="input-field"
+              style={{ width: '170px', paddingRight: filterDate ? '32px' : undefined }}
+              value={filterDate}
+              onChange={(e) => setFilterDate(e.target.value)}
+              title="Filtrar por data específica"
+            />
+            {filterDate && (
+              <button
+                onClick={() => setFilterDate('')}
+                title="Limpar filtro de data"
+                style={{
+                  position: 'absolute',
+                  right: '8px',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'var(--text-muted)',
+                  padding: '2px',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+          {hasData && (
+            <>
+              <select
+                className="input-field"
+                style={{ width: '180px' }}
+                value={selectedMonth?.mes}
+                onChange={(e) => {
+                  const month = dashboard!.meses.find(m => m.mes === parseInt(e.target.value));
+                  if (month) setSelectedMonth(month);
+                }}
+              >
+                {dashboard!.meses.map(m => (
+                  <option key={m.mes} value={m.mes}>{m.nomeMes.charAt(0).toUpperCase() + m.nomeMes.slice(1)}</option>
+                ))}
+              </select>
+              <button className="btn btn-primary">
+                <Calendar size={18} /> Exportar
+              </button>
+            </>
+          )}
         </div>
       </div>
+
+      {!hasData && (
+        <div className="flex-col items-center justify-center glass-panel" style={{ padding: '64px' }}>
+          <DollarSign size={48} style={{ color: 'var(--text-muted)', marginBottom: '16px' }} />
+          <h3>Sem dados {filterDate ? `para ${new Date(filterDate + 'T00:00:00').toLocaleDateString('pt-BR')}` : `para o ano de ${currentYear}`}</h3>
+          <p style={{ color: 'var(--text-muted)' }}>
+            {filterDate ? 'Tente selecionar outra data no filtro acima.' : 'Comece a registrar pagamentos para ver seu dashboard.'}
+          </p>
+        </div>
+      )}
 
       {selectedMonth && (
         <>

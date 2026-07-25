@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FilePlus, Activity, ArrowLeft, Calendar, User, MoreVertical, Edit, Trash2, X, File, Download, Image, Upload, FileText, DollarSign, Check } from 'lucide-react';
+import { FilePlus, Activity, ArrowLeft, Calendar, User, MoreVertical, Edit, Trash2, X, File, Download, Image, Upload, FileText, DollarSign, Check, ChevronRight } from 'lucide-react';
 import { useAuth } from '../../application/contexts/AuthContext';
 import ApiClient from '../../infrastructure/api/apiClient';
 import type { Atendimento, Patient, Pagamento } from '../../domain/models/types';
@@ -65,6 +65,7 @@ export function Records() {
   const [arquivos, setArquivos] = useState<any[]>([]);
   const [filesLoading, setFilesLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [statusSubmenuOpen, setStatusSubmenuOpen] = useState<string | null>(null);
 
   const statusMap: { [key: string]: number } = {
     'Pendente': 1,
@@ -615,12 +616,19 @@ export function Records() {
                         </div>
                       </div>
                       <div className="flex-row items-center gap-3">
-                        <button
+                        {/* <button
                           className="btn btn-secondary"
                           style={{ fontSize: '0.8rem' }}
                           onClick={() => handlePrint(atendimento)}
                         >
                           <FileText size={14} /> Imprimir Registro
+                        </button> */}
+                        <button
+                          className="btn"
+                          style={{ fontSize: '0.8rem', backgroundColor: '#22c55e', color: '#fff', border: 'none' }}
+                          onClick={() => handleOpenRegisterPayment(atendimento)}
+                        >
+                          <DollarSign size={14} /> Registrar Pagamento
                         </button>
 
                         {(canModify || (atendimento.valorPendente == null || atendimento.valorPendente > 0)) && (
@@ -639,7 +647,7 @@ export function Records() {
                             {activeDropdown === atendimento.id && (
                               <div className="dropdown-menu" style={{ right: 0, top: '100%' }}>
                                 <>
-                                  <button
+                                  {/* <button
                                     className="dropdown-item"
                                     onClick={(e) => {
                                       e.stopPropagation();
@@ -648,7 +656,7 @@ export function Records() {
                                     disabled={updatingId === atendimento.id}
                                   >
                                     <DollarSign size={16} /> Registrar Pagamento
-                                  </button>
+                                  </button> */}
                                   {canModify && <div style={{ borderTop: '1px solid var(--border-subtle)', margin: '4px 0' }}></div>}
 
 
@@ -662,21 +670,53 @@ export function Records() {
                                         <Edit size={16} /> Editar
                                       </button>
                                       <div style={{ borderTop: '1px solid var(--border-subtle)', margin: '4px 0' }}></div>
-                                      <div className="p-2">
-                                        <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '4px', paddingLeft: '8px' }}>Alterar Status</p>
-                                        <div className="flex-col gap-1">
-                                          {Object.keys(statusMap).map(status => (
-                                            <button
-                                              key={status}
-                                              className="dropdown-item"
-                                              onClick={() => handleStatusUpdate(atendimento.id, status)}
-                                              disabled={updatingId === atendimento.id}
-                                              style={{ padding: '6px 8px' }}
-                                            >
-                                              {status}
-                                            </button>
-                                          ))}
-                                        </div>
+                                      <div
+                                        style={{ position: 'relative' }}
+                                        onMouseEnter={() => setStatusSubmenuOpen(atendimento.id)}
+                                        onMouseLeave={() => setStatusSubmenuOpen(null)}
+                                      >
+                                        <button
+                                          className="dropdown-item"
+                                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setStatusSubmenuOpen(statusSubmenuOpen === atendimento.id ? null : atendimento.id);
+                                          }}
+                                          disabled={updatingId === atendimento.id}
+                                        >
+                                          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <Activity size={16} /> Alterar Status
+                                          </span>
+                                          <ChevronRight size={14} />
+                                        </button>
+                                        {statusSubmenuOpen === atendimento.id && (
+                                          <div
+                                            className="dropdown-menu"
+                                            style={{
+                                              position: 'absolute',
+                                              left: '100%',
+                                              top: 0,
+                                              minWidth: '150px',
+                                              zIndex: 1001,
+                                              boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+                                            }}
+                                          >
+                                            {Object.keys(statusMap).map(status => (
+                                              <button
+                                                key={status}
+                                                className="dropdown-item"
+                                                onClick={() => {
+                                                  handleStatusUpdate(atendimento.id, status);
+                                                  setStatusSubmenuOpen(null);
+                                                }}
+                                                disabled={updatingId === atendimento.id}
+                                                style={{ padding: '6px 12px' }}
+                                              >
+                                                {status}
+                                              </button>
+                                            ))}
+                                          </div>
+                                        )}
                                       </div>
                                       <div style={{ borderTop: '1px solid var(--border-subtle)', margin: '4px 0' }}></div>
                                       <button
