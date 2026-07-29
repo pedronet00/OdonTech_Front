@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   Users,
-  CalendarDays,
+  // CalendarDays,
   DollarSign,
   LogOut,
   Stethoscope,
@@ -59,7 +59,7 @@ export function Layout() {
         </div>
 
         <nav className="sidebar-nav">
-          <NavLink
+          {/* <NavLink
             to="/agenda"
             className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
             onClick={() => setIsMobileMenuOpen(false)}
@@ -67,7 +67,7 @@ export function Layout() {
           >
             <CalendarDays className="nav-icon" />
             {!isSidebarCollapsed && <span>Agenda</span>}
-          </NavLink>
+          </NavLink> */}
 
           <NavLink
             to="/financeiro"
