@@ -47,9 +47,9 @@ export function Login() {
       <div className="login-box glass-panel animate-fade-in">
         <div className="login-header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <img
-            src="/logo.png"
+            src="/odontech_logo_azul.svg"
             alt="OdonTech Logo"
-            style={{ height: '140px', width: 'auto', marginBottom: '8px' }}
+            style={{ height: '240px', width: 'auto', marginBottom: '8px' }}
           />
           <p className="login-subtitle">Software de Gestão Odontológica</p>
         </div>

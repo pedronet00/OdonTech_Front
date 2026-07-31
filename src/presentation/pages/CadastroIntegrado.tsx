@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { 
-  Clock, User, Home, ClipboardList, CheckCircle2, 
+import {
+  Clock, User, Home, ClipboardList, CheckCircle2,
   AlertTriangle, Save, ArrowRight, ArrowLeft, ShieldAlert
 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -25,16 +25,16 @@ interface MetadataResponse {
 
 export function CadastroIntegrado() {
   const { guid } = useParams<{ guid: string }>();
-  
+
   // Page states
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  
+
   // Registration metadata
   const [metadata, setMetadata] = useState<MetadataResponse | null>(null);
-  
+
   // Expiration countdown states
   const [remainingSeconds, setRemainingSeconds] = useState<number>(0);
   const [isExpired, setIsExpired] = useState(false);
@@ -136,17 +136,17 @@ export function CadastroIntegrado() {
         setLoading(true);
         const res = await fetch(`${BASE_INTEGRATION_URL}/CadastroIntegrado/${guid}`);
         const result = await res.json();
-        
+
         if (!res.ok || !result.isSuccess) {
           throw new Error(result.errors?.[0]?.message || 'Falha ao buscar dados de cadastro.');
         }
-        
+
         const data: MetadataResponse = result.data;
         setMetadata(data);
         if (data.tipoCadastro === 'SomenteAnamnese') {
           setCurrentStep(3);
         }
-        
+
         // Calculate remaining seconds
         const now = new Date().getTime();
         const exp = new Date(data.dataExpiracao).getTime();
@@ -412,7 +412,7 @@ export function CadastroIntegrado() {
           outrasCondicoesRespiratorias: fichaAnamnese.outrasCondicoesRespiratorias,
           outrasDeficienciasNecessidades: fichaAnamnese.outrasDeficienciasNecessidades,
           outrasDoencasSanguineas: fichaAnamnese.outrasDoencasSanguineas,
-          
+
           condicoesCardiacas: fichaAnamnese.condicoesCardiacas.map(c => ({
             condicaoCardiaca: c.condicaoCardiaca,
             outraCondicao: c.condicaoCardiaca === 9 ? fichaAnamnese.outrasCondicoesCardiacas : null
@@ -604,11 +604,7 @@ export function CadastroIntegrado() {
       {/* Header */}
       <div className="public-header">
         <div className="flex-row items-center gap-3">
-          <img src="/logo.png" alt="OdonTech Logo" className="public-logo" />
-          <div className="mobile-hide">
-            <h1 style={{ fontSize: '1.2rem', margin: 0 }}>OdonTech</h1>
-            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>Preenchimento de Ficha Cadastral</p>
-          </div>
+          <img src="/odontech_logo_horizontal_azul.svg" alt="OdonTech Logo" className="public-logo" />
         </div>
         <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
           {metadata?.tipoCadastro === 'SomenteAnamnese' ? 'Ficha de Anamnese' : 'Paciente & Anamnese'}
@@ -631,7 +627,7 @@ export function CadastroIntegrado() {
         {metadata?.tipoCadastro !== 'SomenteAnamnese' && (
           <div className="step-indicator-bar">
             <div className="step-indicator-bar-progress" style={{ width: `${progressPercent}%` }}></div>
-            
+
             <div className="step-dot-container">
               <div className={`step-dot ${currentStep === 1 ? 'active' : ''} ${currentStep > 1 ? 'completed' : ''}`}>
                 {currentStep > 1 ? <CheckCircle2 size={16} /> : '1'}
@@ -665,14 +661,14 @@ export function CadastroIntegrado() {
 
         {/* Forms steps */}
         <form onSubmit={handleNextStep}>
-          
+
           {/* STEP 1: Personal Data */}
           {currentStep === 1 && (
             <div className="form-card animate-fade-in">
               <h2 className="form-section-title">
                 <User size={20} style={{ color: 'var(--primary)' }} /> Dados Pessoais
               </h2>
-              
+
               <div className="form-group-container">
                 <div className="form-group">
                   <label className="input-label">Nome Completo <span style={{ color: 'var(--danger)' }}>*</span></label>
@@ -764,7 +760,7 @@ export function CadastroIntegrado() {
 
                 <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '20px', marginTop: '8px' }}>
                   <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>Profissão &amp; Contato Emergencial</p>
-                  
+
                   <div className="form-group" style={{ marginBottom: '24px' }}>
                     <label className="input-label">Profissão</label>
                     <input
@@ -950,7 +946,7 @@ export function CadastroIntegrado() {
               <h2 className="form-section-title">
                 <ClipboardList size={20} style={{ color: 'var(--primary)' }} /> Ficha de Anamnese
               </h2>
-              
+
               {/* Internal Tabs for Anamnese Sections */}
               <div className="anamnese-tabs" style={{ marginBottom: '24px' }}>
                 <button type="button" className={`anamnese-tab-btn ${anamneseActiveTab === 'geral' ? 'active' : ''}`} onClick={() => setAnamneseActiveTab('geral')}>Geral</button>
@@ -963,7 +959,7 @@ export function CadastroIntegrado() {
               {/* Tab: Geral */}
               {anamneseActiveTab === 'geral' && (
                 <div className="anamnese-grid animate-fade-in">
-                  
+
                   {/* Tomando Medicamento */}
                   <div className="anamnese-question-row">
                     <div className="anamnese-controls">
@@ -1048,7 +1044,7 @@ export function CadastroIntegrado() {
               {/* Tab: Hábitos */}
               {anamneseActiveTab === 'habitos' && (
                 <div className="anamnese-grid animate-fade-in">
-                  
+
                   {/* Alergias */}
                   <div className="anamnese-question-row">
                     <div className="anamnese-controls">
@@ -1094,7 +1090,7 @@ export function CadastroIntegrado() {
               {/* Tab: Patologias */}
               {anamneseActiveTab === 'patologias' && (
                 <div className="anamnese-grid animate-fade-in">
-                  
+
                   {/* Tipo PA */}
                   <div className="anamnese-question-row">
                     <div className="anamnese-controls">
@@ -1228,7 +1224,7 @@ export function CadastroIntegrado() {
               {/* Tab: Cardio & Sangue */}
               {anamneseActiveTab === 'cardiovascular' && (
                 <div className="anamnese-grid animate-fade-in" style={{ gridTemplateColumns: '1fr' }}>
-                  
+
                   {/* Problema Cardíaco */}
                   <div className="anamnese-question-row">
                     <div className="anamnese-controls">
@@ -1238,11 +1234,11 @@ export function CadastroIntegrado() {
                         <button type="button" className={`toggle-btn ${!fichaAnamnese.temProblemaCardiaco ? 'active no' : ''}`} onClick={() => setFichaAnamnese({ ...fichaAnamnese, temProblemaCardiaco: false, condicoesCardiacas: [], qualProblemaCardiaco: null })}>Não</button>
                       </div>
                     </div>
-                    
+
                     {fichaAnamnese.temProblemaCardiaco && (
                       <div className="flex-col gap-2" style={{ marginTop: '12px', width: '100%' }}>
                         <input type="text" className="input-field" placeholder="Descreva o problema cardíaco" value={fichaAnamnese.qualProblemaCardiaco || ''} onChange={e => setFichaAnamnese({ ...fichaAnamnese, qualProblemaCardiaco: e.target.value })} required />
-                        
+
                         <div className="sub-conditions-section">
                           <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Selecione as condições aplicáveis:</span>
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px', marginTop: '10px' }}>
@@ -1360,7 +1356,7 @@ export function CadastroIntegrado() {
               {/* Tab: Sistemas & Envio */}
               {anamneseActiveTab === 'confirmacao' && (
                 <div className="anamnese-grid animate-fade-in" style={{ gridTemplateColumns: '1fr' }}>
-                  
+
                   {/* Problema Respiratório */}
                   <div className="anamnese-question-row">
                     <div className="anamnese-controls">
@@ -1546,7 +1542,7 @@ export function CadastroIntegrado() {
                 ) : (
                   <div></div>
                 )}
-                
+
                 {anamneseActiveTab !== 'confirmacao' ? (
                   <button type="button" className="btn btn-primary" style={{ padding: '12px 24px' }} onClick={() => {
                     const tabsOrder: ('geral' | 'habitos' | 'patologias' | 'cardiovascular' | 'confirmacao')[] = ['geral', 'habitos', 'patologias', 'cardiovascular', 'confirmacao'];

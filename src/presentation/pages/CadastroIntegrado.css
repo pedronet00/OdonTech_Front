@@ -20,7 +20,7 @@
 }
 
 .public-logo {
-  height: 60px;
+  height: 120px;
   width: auto;
 }
 
@@ -49,35 +49,57 @@
 }
 
 .timer-banner.timer-normal {
-  background: rgba(209, 250, 229, 0.9); /* Green tint */
+  background: rgba(209, 250, 229, 0.9);
+  /* Green tint */
   border-color: rgba(5, 150, 105, 0.2);
   color: #065f46;
 }
 
 .timer-banner.timer-warning {
-  background: rgba(254, 243, 199, 0.95); /* Yellow tint */
+  background: rgba(254, 243, 199, 0.95);
+  /* Yellow tint */
   border-color: rgba(217, 119, 6, 0.2);
   color: #92400e;
   animation: pulseWarning 2s infinite ease-in-out;
 }
 
 .timer-banner.timer-critical {
-  background: rgba(254, 226, 226, 0.98); /* Red tint */
+  background: rgba(254, 226, 226, 0.98);
+  /* Red tint */
   border-color: rgba(220, 38, 38, 0.25);
   color: #991b1b;
   animation: pulseCritical 1s infinite ease-in-out;
 }
 
 @keyframes pulseWarning {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.02); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.02);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
 
 @keyframes pulseCritical {
-  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
-  50% { transform: scale(1.03); box-shadow: 0 0 12px 4px rgba(220, 38, 38, 0.2); }
-  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4);
+  }
+
+  50% {
+    transform: scale(1.03);
+    box-shadow: 0 0 12px 4px rgba(220, 38, 38, 0.2);
+  }
+
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+  }
 }
 
 .timer-clock {
@@ -262,29 +284,36 @@
   .public-header {
     padding: 16px 16px 0;
   }
+
   .public-logo {
-    height: 48px;
+    height: 120px;
   }
+
   .form-card {
     padding: 20px;
     border-radius: 12px;
   }
+
   .timer-banner {
     padding: 10px 16px;
     font-size: 0.9rem;
   }
+
   .timer-clock {
     font-size: 1.1rem;
   }
+
   .step-label {
     font-size: 0.7rem;
     max-width: 70px;
     overflow: hidden;
     text-overflow: ellipsis;
   }
+
   .form-actions-container {
     flex-direction: column-reverse;
   }
+
   .form-actions-container button {
     width: 100%;
   }

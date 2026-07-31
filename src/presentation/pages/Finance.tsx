@@ -11,8 +11,28 @@ export function Finance() {
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState<MonthData | null>(null);
   const [filterDate, setFilterDate] = useState<string>('');
+  const [debouncedFilterDate, setDebouncedFilterDate] = useState<string>('');
 
   const currentYear = new Date().getFullYear();
+
+  // Debounce the filter date: only update after 800ms of no typing,
+  // and only if the date is empty (cleared) or a valid complete date (YYYY-MM-DD)
+  useEffect(() => {
+    const isValidCompleteDate = (val: string) => {
+      if (!val) return true; // empty is valid (means no filter)
+      if (val.length !== 10) return false; // must be YYYY-MM-DD
+      const parsed = new Date(val + 'T00:00:00');
+      return !isNaN(parsed.getTime());
+    };
+
+    const timer = setTimeout(() => {
+      if (isValidCompleteDate(filterDate)) {
+        setDebouncedFilterDate(filterDate);
+      }
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [filterDate]);
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -20,8 +40,8 @@ export function Finance() {
       try {
         setLoading(true);
         const params = new URLSearchParams();
-        if (filterDate) {
-          params.append('data', filterDate);
+        if (debouncedFilterDate) {
+          params.append('data', debouncedFilterDate);
         }
         const queryString = params.toString() ? `?${params.toString()}` : '';
         const data = await ApiClient.get<FinanceDashboard>(`/dashboard/financeiro/${user.clinica_id}/${currentYear}${queryString}`);
@@ -29,8 +49,8 @@ export function Finance() {
 
         // Select current month or first available
         if (data.meses.length > 0) {
-          if (filterDate) {
-            const filterMonth = new Date(filterDate).getMonth() + 1;
+          if (debouncedFilterDate) {
+            const filterMonth = new Date(debouncedFilterDate).getMonth() + 1;
             const month = data.meses.find(m => m.mes === filterMonth) || data.meses[0];
             setSelectedMonth(month);
           } else {
@@ -50,7 +70,7 @@ export function Finance() {
     };
 
     fetchDashboard();
-  }, [user?.clinica_id, token, currentYear, filterDate]);
+  }, [user?.clinica_id, token, currentYear, debouncedFilterDate]);
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
