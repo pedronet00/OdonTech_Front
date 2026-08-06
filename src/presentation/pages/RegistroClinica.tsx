@@ -42,7 +42,6 @@ export function RegistroClinica() {
   const navigate = useNavigate();
 
   const [currentStep, setCurrentStep] = useState(1);
-  const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
