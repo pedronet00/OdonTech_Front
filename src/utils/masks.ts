@@ -29,3 +29,13 @@ export const applyCepMask = (value: string) => {
     .replace(/(\d{5})(\d)/, '$1-$2') // insert dash after 5th digit
     .replace(/(-\d{3})\d+?$/, '$1'); // limit length to 8 digits
 };
+
+export const applyCnpjMask = (value: string) => {
+  return value
+    .replace(/\D/g, '') // remove every non-number character
+    .replace(/(\d{2})(\d)/, '$1.$2') // insert dot after 2nd digit
+    .replace(/(\d{3})(\d)/, '$1.$2') // insert dot after 5th digit
+    .replace(/(\d{3})(\d)/, '$1/$2') // insert slash after 8th digit
+    .replace(/(\d{4})(\d{1,2})/, '$1-$2') // insert dash after 12th digit
+    .replace(/(-\d{2})\d+?$/, '$1'); // prevent typing more than 14 digits
+};

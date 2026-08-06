@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './presentation/components/Layout';
 import { Login } from './presentation/pages/Login';
+import { RegistroClinica } from './presentation/pages/RegistroClinica';
 import { CadastroIntegrado } from './presentation/pages/CadastroIntegrado';
 import { Patients } from './presentation/pages/Patients';
 import { Schedule } from './presentation/pages/Schedule';
@@ -24,6 +25,7 @@ function App() {
         <Toaster position="top-right" />
         <Routes>
           <Route path="/entrar" element={<Login />} />
+          <Route path="/registro" element={<RegistroClinica />} />
           <Route path="/cadastro-integrado/:guid" element={<CadastroIntegrado />} />
 
           <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
