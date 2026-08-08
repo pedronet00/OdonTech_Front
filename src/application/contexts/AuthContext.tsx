@@ -19,6 +19,8 @@ interface LoginResponse {
   accessToken: string;
   refreshToken: string;
   expiresAt: string;
+  paymentLink?: string | null;
+  subscriptionStatus?: string | null;
 }
 
 interface AuthContextType {

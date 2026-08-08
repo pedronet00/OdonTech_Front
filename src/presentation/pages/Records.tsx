@@ -1086,8 +1086,8 @@ export function Records() {
                         min="0"
                         className="input-field"
                         placeholder="0,00"
-                        value={editingAtendimento.valorAtendimento}
-                        onChange={e => setEditingAtendimento({ ...editingAtendimento, valorAtendimento: Number(e.target.value) })}
+                        value={editingAtendimento.valorAtendimento || ''}
+                        onChange={e => setEditingAtendimento({ ...editingAtendimento, valorAtendimento: e.target.value === '' ? 0 : Number(e.target.value) })}
                       />
                     </div>
                   </div>

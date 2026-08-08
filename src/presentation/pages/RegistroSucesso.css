@@ -1,0 +1,288 @@
+.sucesso-page {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(160deg, #0c1829 0%, #0f172a 40%, #0e2743 100%);
+  padding: 40px 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Background glows */
+.sucesso-bg-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  pointer-events: none;
+}
+
+.sucesso-bg-glow-1 {
+  width: 500px;
+  height: 500px;
+  background: rgba(5, 150, 105, 0.12);
+  top: -120px;
+  right: -100px;
+}
+
+.sucesso-bg-glow-2 {
+  width: 400px;
+  height: 400px;
+  background: rgba(2, 132, 199, 0.1);
+  bottom: -80px;
+  left: -80px;
+}
+
+/* Content container */
+.sucesso-content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* Animated success icon */
+.sucesso-icon-wrapper {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  margin-bottom: 32px;
+}
+
+.sucesso-icon-circle {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+  animation: sucessoBounceIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 8px 32px rgba(5, 150, 105, 0.35);
+}
+
+.sucesso-icon-ring {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  right: -8px;
+  bottom: -8px;
+  border-radius: 50%;
+  border: 2px solid rgba(16, 185, 129, 0.2);
+  animation: sucessoPulse 2s ease-in-out infinite;
+  z-index: 1;
+}
+
+@keyframes sucessoBounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes sucessoPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0;
+  }
+}
+
+/* Sparkle animations */
+.sucesso-sparkle {
+  position: absolute;
+  color: #fbbf24;
+  z-index: 3;
+  animation: sucessoSparkle 2s ease-in-out infinite;
+}
+
+.sucesso-sparkle-1 {
+  top: -4px;
+  right: -8px;
+  animation-delay: 0s;
+}
+
+.sucesso-sparkle-2 {
+  bottom: 4px;
+  left: -12px;
+  animation-delay: 0.5s;
+}
+
+.sucesso-sparkle-3 {
+  top: 8px;
+  left: -6px;
+  animation-delay: 1s;
+}
+
+@keyframes sucessoSparkle {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0.5) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1) rotate(15deg);
+  }
+}
+
+/* Text */
+.sucesso-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #f1f5f9;
+  margin-bottom: 12px;
+  animation: sucessoFadeUp 0.5s ease-out 0.3s both;
+}
+
+.sucesso-subtitle {
+  font-size: 0.95rem;
+  color: #94a3b8;
+  line-height: 1.7;
+  margin-bottom: 36px;
+  max-width: 420px;
+  animation: sucessoFadeUp 0.5s ease-out 0.45s both;
+}
+
+.sucesso-subtitle strong {
+  color: #38bdf8;
+}
+
+@keyframes sucessoFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Next steps cards */
+.sucesso-next-steps {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 36px;
+  animation: sucessoFadeUp 0.5s ease-out 0.6s both;
+}
+
+.sucesso-step-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.sucesso-step-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.sucesso-step-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(2, 132, 199, 0.12);
+  border: 1px solid rgba(2, 132, 199, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #38bdf8;
+}
+
+.sucesso-step-card h4 {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin-bottom: 2px;
+}
+
+.sucesso-step-card p {
+  font-size: 0.78rem;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+/* CTA Button */
+.sucesso-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 36px;
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  font-family: var(--font-sans);
+  width: 100%;
+  box-shadow: 0 4px 20px rgba(2, 132, 199, 0.3);
+  animation: sucessoFadeUp 0.5s ease-out 0.75s both;
+}
+
+.sucesso-cta-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(2, 132, 199, 0.45);
+  background: linear-gradient(135deg, #0369a1, #075985);
+}
+
+.sucesso-cta-btn:active {
+  transform: translateY(0);
+}
+
+/* Hint */
+.sucesso-hint {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-top: 16px;
+  animation: sucessoFadeUp 0.5s ease-out 0.85s both;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sucesso-page {
+    padding: 32px 16px;
+  }
+
+  .sucesso-title {
+    font-size: 1.6rem;
+  }
+
+  .sucesso-subtitle {
+    font-size: 0.9rem;
+  }
+
+  .sucesso-step-card {
+    padding: 14px 16px;
+  }
+}

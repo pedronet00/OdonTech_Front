@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   Building2, MapPin, User, CreditCard, ArrowRight, ArrowLeft,
   CheckCircle2, AlertCircle, Eye, EyeOff, Users, UserCheck,
-  Check, X, Loader2
+  Check, X, Loader2, Shield, CalendarCheck, BarChart3
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { API_BASE_URL } from '../../infrastructure/config/api';
 import { applyPhoneMask, applyCepMask, applyCnpjMask, applyCroMask } from '../../utils/masks';
+import { RegistroSucesso } from './RegistroSucesso';
 import './RegistroClinica.css';
 
 interface Plano {
@@ -39,7 +39,6 @@ const ESTADOS_BR = [
 ];
 
 export function RegistroClinica() {
-  const navigate = useNavigate();
 
   const [currentStep, setCurrentStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
@@ -234,379 +233,408 @@ export function RegistroClinica() {
 
   const passwordStrength = getPasswordStrength(formData.senha);
 
-  // Success state
+  // Success: show dedicated success page
   if (success) {
-    return (
-      <div className="registro-container">
-        <div className="registro-success animate-fade-in">
-          <div className="registro-success-circle">
-            <CheckCircle2 size={40} />
-          </div>
-          <h2 style={{ fontSize: '1.5rem', marginBottom: '8px', color: 'var(--text-main)' }}>
-            Cadastro Realizado!
-          </h2>
-          <p style={{ color: 'var(--text-muted)', marginBottom: '28px', maxWidth: '400px' }}>
-            Sua clínica foi registrada com sucesso. Agora você pode acessar o sistema com seu email e senha.
-          </p>
-          <button
-            className="registro-btn registro-btn-primary"
-            onClick={() => navigate('/entrar')}
-          >
-            Acessar o Sistema <ArrowRight size={18} />
-          </button>
-        </div>
-      </div>
-    );
+    return <RegistroSucesso />;
   }
 
   return (
-    <div className="registro-container">
-      {/* Header */}
-      <div className="registro-header">
-        <img
-          src="/odontech_logo_azul.svg"
-          alt="OdonTech Logo"
-        />
-        <p>Registre sua clínica e comece agora</p>
-      </div>
+    <div className="registro-page">
+      {/* Left Panel - Branding & Persuasion */}
+      <div className="registro-left">
+        <div className="registro-left-content">
+          <img
+            src="/odontech_logo_azul.svg"
+            alt="OdonTech Logo"
+          />
+          <h2 className="registro-left-tagline">
+            A gestão da sua clínica, <span>simplificada</span>.
+          </h2>
+          <p className="registro-left-desc">
+            Cadastre sua clínica em poucos minutos e tenha acesso a uma plataforma completa para gerenciar pacientes, agendamentos e finanças.
+          </p>
 
-      {/* Stepper */}
-      <div className="registro-stepper">
-        {steps.map((step, idx) => (
-          <React.Fragment key={step.number}>
-            <div className="registro-step">
-              <div className={`registro-step-dot ${currentStep === step.number ? 'active' : ''} ${currentStep > step.number ? 'completed' : ''}`}>
-                {currentStep > step.number ? <CheckCircle2 size={18} /> : step.number}
+          <div className="registro-features">
+            <div className="registro-feature-item">
+              <div className="registro-feature-icon">
+                <CalendarCheck size={20} />
               </div>
-              <span className={`registro-step-label ${currentStep === step.number ? 'active' : ''} ${currentStep > step.number ? 'completed' : ''}`}>
-                {step.label}
-              </span>
+              <div className="registro-feature-text">
+                <h4>Agenda Inteligente</h4>
+                <p>Gerencie horários e agendamentos com facilidade.</p>
+              </div>
             </div>
-            {idx < steps.length - 1 && (
-              <div className={`registro-step-line ${currentStep > step.number ? 'completed' : ''}`} />
-            )}
-          </React.Fragment>
-        ))}
-      </div>
 
-      {/* Form Card */}
-      <div className="registro-card" key={currentStep}>
-        {error && (
-          <div className="registro-error">
-            <AlertCircle size={18} />
-            {error}
+            <div className="registro-feature-item">
+              <div className="registro-feature-icon">
+                <BarChart3 size={20} />
+              </div>
+              <div className="registro-feature-text">
+                <h4>Controle Financeiro</h4>
+                <p>Acompanhe receitas, pagamentos e relatórios.</p>
+              </div>
+            </div>
+
+            <div className="registro-feature-item">
+              <div className="registro-feature-icon">
+                <Shield size={20} />
+              </div>
+              <div className="registro-feature-text">
+                <h4>Seguro e Confiável</h4>
+                <p>Seus dados protegidos com criptografia de ponta.</p>
+              </div>
+            </div>
           </div>
-        )}
-
-        {/* Step 1: Clínica */}
-        {currentStep === 1 && (
-          <>
-            <div className="registro-section-title">
-              <Building2 size={22} /> Dados da Clínica
-            </div>
-            <div className="registro-form-grid">
-              <div className="registro-form-group full-width">
-                <label>Nome da Clínica <span className="required">*</span></label>
-                <input
-                  type="text"
-                  placeholder="Ex: Clínica OdontoSorriso"
-                  value={formData.clinicaNome}
-                  onChange={e => handleChange('clinicaNome', e.target.value)}
-                  maxLength={100}
-                />
-              </div>
-              <div className="registro-form-group">
-                <label>CNPJ <span className="required">*</span></label>
-                <input
-                  type="text"
-                  placeholder="00.000.000/0000-00"
-                  value={applyCnpjMask(formData.clinicaCnpj)}
-                  onChange={e => handleChange('clinicaCnpj', e.target.value.replace(/\D/g, ''))}
-                  maxLength={18}
-                />
-              </div>
-              <div className="registro-form-group">
-                <label>Telefone <span className="required">*</span></label>
-                <input
-                  type="text"
-                  placeholder="(00) 00000-0000"
-                  value={applyPhoneMask(formData.clinicaTelefone)}
-                  onChange={e => handleChange('clinicaTelefone', e.target.value.replace(/\D/g, ''))}
-                  maxLength={15}
-                />
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* Step 2: Endereço */}
-        {currentStep === 2 && (
-          <>
-            <div className="registro-section-title">
-              <MapPin size={22} /> Endereço da Clínica
-            </div>
-            <div className="registro-form-grid">
-              <div className="registro-form-group">
-                <label>CEP <span className="required">*</span></label>
-                <input
-                  type="text"
-                  placeholder="00000-000"
-                  value={applyCepMask(formData.cep)}
-                  onChange={e => handleChange('cep', e.target.value.replace(/\D/g, ''))}
-                  onBlur={handleCepBlur}
-                  maxLength={9}
-                />
-                <span className="input-hint">Preencha o CEP para autocompletar</span>
-              </div>
-              <div className="registro-form-group">
-                <label>Estado <span className="required">*</span></label>
-                <select
-                  value={formData.estado}
-                  onChange={e => handleChange('estado', e.target.value)}
-                >
-                  <option value="">Selecione...</option>
-                  {ESTADOS_BR.map(uf => (
-                    <option key={uf} value={uf}>{uf}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="registro-form-group full-width">
-                <label>Logradouro <span className="required">*</span></label>
-                <input
-                  type="text"
-                  placeholder="Rua, avenida, travessa..."
-                  value={formData.logradouro}
-                  onChange={e => handleChange('logradouro', e.target.value)}
-                  maxLength={200}
-                />
-              </div>
-              <div className="registro-form-group">
-                <label>Número <span className="required">*</span></label>
-                <input
-                  type="text"
-                  placeholder="123"
-                  value={formData.numero}
-                  onChange={e => handleChange('numero', e.target.value.replace(/\D/g, ''))}
-                  maxLength={10}
-                />
-              </div>
-              <div className="registro-form-group">
-                <label>Complemento</label>
-                <input
-                  type="text"
-                  placeholder="Sala, bloco, andar..."
-                  value={formData.complemento}
-                  onChange={e => handleChange('complemento', e.target.value)}
-                  maxLength={100}
-                />
-              </div>
-              <div className="registro-form-group">
-                <label>Bairro <span className="required">*</span></label>
-                <input
-                  type="text"
-                  placeholder="Bairro"
-                  value={formData.bairro}
-                  onChange={e => handleChange('bairro', e.target.value)}
-                  maxLength={100}
-                />
-              </div>
-              <div className="registro-form-group">
-                <label>Cidade <span className="required">*</span></label>
-                <input
-                  type="text"
-                  placeholder="Cidade"
-                  value={formData.cidade}
-                  onChange={e => handleChange('cidade', e.target.value)}
-                  maxLength={100}
-                />
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* Step 3: Responsável */}
-        {currentStep === 3 && (
-          <>
-            <div className="registro-section-title">
-              <User size={22} /> Dados do Responsável
-            </div>
-            <div className="registro-form-grid">
-              <div className="registro-form-group full-width">
-                <label>Nome Completo <span className="required">*</span></label>
-                <input
-                  type="text"
-                  placeholder="Seu nome completo"
-                  value={formData.nome}
-                  onChange={e => handleChange('nome', e.target.value)}
-                  maxLength={100}
-                />
-              </div>
-              <div className="registro-form-group">
-                <label>Email <span className="required">*</span></label>
-                <input
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={formData.email}
-                  onChange={e => handleChange('email', e.target.value)}
-                  maxLength={100}
-                />
-              </div>
-              <div className="registro-form-group">
-                <label>CRO <span className="required">*</span></label>
-                <input
-                  type="text"
-                  placeholder="Número do CRO"
-                  value={applyCroMask(formData.cro)}
-                  onChange={e => handleChange('cro', e.target.value)}
-                  maxLength={15}
-                />
-              </div>
-              <div className="registro-form-group full-width">
-                <label>Senha <span className="required">*</span></label>
-                <div style={{ position: 'relative' }}>
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Mínimo 6 caracteres"
-                    value={formData.senha}
-                    onChange={e => handleChange('senha', e.target.value)}
-                    maxLength={255}
-                    style={{ paddingRight: '44px' }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    style={{
-                      position: 'absolute',
-                      right: '12px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      color: 'var(--text-muted)',
-                      padding: '4px',
-                      display: 'flex'
-                    }}
-                  >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
-                {formData.senha && (
-                  <>
-                    <div className="password-strength-bar">
-                      {[1, 2, 3, 4, 5].map(i => (
-                        <div
-                          key={i}
-                          className={`password-strength-segment ${i <= passwordStrength.level ? `filled ${passwordStrength.key}` : ''}`}
-                        />
-                      ))}
-                    </div>
-                    <span className={`password-strength-label ${passwordStrength.key}`}>
-                      Força: {passwordStrength.label}
-                    </span>
-                  </>
-                )}
-                <span className="input-hint">Use letras maiúsculas, números e caracteres especiais</span>
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* Step 4: Plano */}
-        {currentStep === 4 && (
-          <>
-            <div className="registro-section-title">
-              <CreditCard size={22} /> Escolha seu Plano
-            </div>
-            {planosLoading ? (
-              <div className="registro-loading">
-                <div className="spinner" />
-                <span>Carregando planos...</span>
-              </div>
-            ) : (
-              <div className="planos-grid">
-                {planos.map(plano => (
-                  <div
-                    key={plano.id}
-                    className={`plano-card ${formData.planoId === plano.id ? 'selected' : ''}`}
-                    onClick={() => handleChange('planoId', plano.id)}
-                  >
-                    <span className="plano-nome">{plano.nome}</span>
-                    <span className="plano-preco">
-                      R$ {plano.precoMensal.toFixed(2).replace('.', ',')}
-                      <span>/mês</span>
-                    </span>
-                    <ul className="plano-features">
-                      <li>
-                        <Users size={14} color="var(--primary)" />
-                        Até {plano.limiteProfissionais} profissionais
-                      </li>
-                      <li>
-                        <UserCheck size={14} color="var(--primary)" />
-                        Até {plano.limitePacientes} pacientes
-                      </li>
-                      <li>
-                        {plano.permiteAutocadastroPaciente
-                          ? <Check size={14} color="var(--success)" />
-                          : <X size={14} color="var(--text-muted)" />
-                        }
-                        Autocadastro de paciente
-                      </li>
-                    </ul>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-        )}
-
-        {/* Navigation */}
-        <div className="registro-actions">
-          {currentStep > 1 ? (
-            <button
-              className="registro-btn registro-btn-secondary"
-              onClick={handlePrev}
-              type="button"
-            >
-              <ArrowLeft size={18} /> Voltar
-            </button>
-          ) : (
-            <div />
-          )}
-
-          {currentStep < 4 ? (
-            <button
-              className="registro-btn registro-btn-primary"
-              onClick={handleNext}
-              type="button"
-            >
-              Próximo <ArrowRight size={18} />
-            </button>
-          ) : (
-            <button
-              className="registro-btn registro-btn-primary"
-              onClick={handleSubmit}
-              disabled={submitting}
-              type="button"
-            >
-              {submitting ? (
-                <>
-                  <Loader2 size={18} className="spinner" style={{ border: 'none', width: '18px', height: '18px' }} />
-                  Registrando...
-                </>
-              ) : (
-                <>
-                  Registrar Clínica <CheckCircle2 size={18} />
-                </>
-              )}
-            </button>
-          )}
         </div>
       </div>
 
-      {/* Login link */}
-      <div className="registro-login-link">
-        Já possui uma conta? <a href="/entrar">Faça login</a>
+      {/* Right Panel - Form */}
+      <div className="registro-right">
+        <div className="registro-right-inner">
+          <div className="registro-right-header">
+            <h1>Crie sua conta</h1>
+            <p>Preencha os dados abaixo para registrar sua clínica</p>
+          </div>
+
+          {/* Stepper */}
+          <div className="registro-stepper">
+            {steps.map((step, idx) => (
+              <React.Fragment key={step.number}>
+                <div className="registro-step">
+                  <div className={`registro-step-dot ${currentStep === step.number ? 'active' : ''} ${currentStep > step.number ? 'completed' : ''}`}>
+                    {currentStep > step.number ? <CheckCircle2 size={16} /> : step.number}
+                  </div>
+                  <span className={`registro-step-label ${currentStep === step.number ? 'active' : ''} ${currentStep > step.number ? 'completed' : ''}`}>
+                    {step.label}
+                  </span>
+                </div>
+                {idx < steps.length - 1 && (
+                  <div className={`registro-step-line ${currentStep > step.number ? 'completed' : ''}`} />
+                )}
+              </React.Fragment>
+            ))}
+          </div>
+
+          {/* Form Card */}
+          <div className="registro-card" key={currentStep}>
+            {error && (
+              <div className="registro-error">
+                <AlertCircle size={16} />
+                {error}
+              </div>
+            )}
+
+            {/* Step 1: Clínica */}
+            {currentStep === 1 && (
+              <>
+                <div className="registro-section-title">
+                  <Building2 size={20} /> Dados da Clínica
+                </div>
+                <div className="registro-form-grid">
+                  <div className="registro-form-group full-width">
+                    <label>Nome da Clínica <span className="required">*</span></label>
+                    <input
+                      type="text"
+                      placeholder="Ex: Clínica OdontoSorriso"
+                      value={formData.clinicaNome}
+                      onChange={e => handleChange('clinicaNome', e.target.value)}
+                      maxLength={100}
+                    />
+                  </div>
+                  <div className="registro-form-group">
+                    <label>CNPJ <span className="required">*</span></label>
+                    <input
+                      type="text"
+                      placeholder="00.000.000/0000-00"
+                      value={applyCnpjMask(formData.clinicaCnpj)}
+                      onChange={e => handleChange('clinicaCnpj', e.target.value.replace(/\D/g, ''))}
+                      maxLength={18}
+                    />
+                  </div>
+                  <div className="registro-form-group">
+                    <label>Telefone <span className="required">*</span></label>
+                    <input
+                      type="text"
+                      placeholder="(00) 00000-0000"
+                      value={applyPhoneMask(formData.clinicaTelefone)}
+                      onChange={e => handleChange('clinicaTelefone', e.target.value.replace(/\D/g, ''))}
+                      maxLength={15}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Step 2: Endereço */}
+            {currentStep === 2 && (
+              <>
+                <div className="registro-section-title">
+                  <MapPin size={20} /> Endereço da Clínica
+                </div>
+                <div className="registro-form-grid">
+                  <div className="registro-form-group">
+                    <label>CEP <span className="required">*</span></label>
+                    <input
+                      type="text"
+                      placeholder="00000-000"
+                      value={applyCepMask(formData.cep)}
+                      onChange={e => handleChange('cep', e.target.value.replace(/\D/g, ''))}
+                      onBlur={handleCepBlur}
+                      maxLength={9}
+                    />
+                    <span className="input-hint">Preencha o CEP para autocompletar</span>
+                  </div>
+                  <div className="registro-form-group">
+                    <label>Estado <span className="required">*</span></label>
+                    <select
+                      value={formData.estado}
+                      onChange={e => handleChange('estado', e.target.value)}
+                    >
+                      <option value="">Selecione...</option>
+                      {ESTADOS_BR.map(uf => (
+                        <option key={uf} value={uf}>{uf}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="registro-form-group full-width">
+                    <label>Logradouro <span className="required">*</span></label>
+                    <input
+                      type="text"
+                      placeholder="Rua, avenida, travessa..."
+                      value={formData.logradouro}
+                      onChange={e => handleChange('logradouro', e.target.value)}
+                      maxLength={200}
+                    />
+                  </div>
+                  <div className="registro-form-group">
+                    <label>Número <span className="required">*</span></label>
+                    <input
+                      type="text"
+                      placeholder="123"
+                      value={formData.numero}
+                      onChange={e => handleChange('numero', e.target.value.replace(/\D/g, ''))}
+                      maxLength={10}
+                    />
+                  </div>
+                  <div className="registro-form-group">
+                    <label>Complemento</label>
+                    <input
+                      type="text"
+                      placeholder="Sala, bloco, andar..."
+                      value={formData.complemento}
+                      onChange={e => handleChange('complemento', e.target.value)}
+                      maxLength={100}
+                    />
+                  </div>
+                  <div className="registro-form-group">
+                    <label>Bairro <span className="required">*</span></label>
+                    <input
+                      type="text"
+                      placeholder="Bairro"
+                      value={formData.bairro}
+                      onChange={e => handleChange('bairro', e.target.value)}
+                      maxLength={100}
+                    />
+                  </div>
+                  <div className="registro-form-group">
+                    <label>Cidade <span className="required">*</span></label>
+                    <input
+                      type="text"
+                      placeholder="Cidade"
+                      value={formData.cidade}
+                      onChange={e => handleChange('cidade', e.target.value)}
+                      maxLength={100}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Step 3: Responsável */}
+            {currentStep === 3 && (
+              <>
+                <div className="registro-section-title">
+                  <User size={20} /> Dados do Responsável
+                </div>
+                <div className="registro-form-grid">
+                  <div className="registro-form-group full-width">
+                    <label>Nome Completo <span className="required">*</span></label>
+                    <input
+                      type="text"
+                      placeholder="Seu nome completo"
+                      value={formData.nome}
+                      onChange={e => handleChange('nome', e.target.value)}
+                      maxLength={100}
+                    />
+                  </div>
+                  <div className="registro-form-group">
+                    <label>Email <span className="required">*</span></label>
+                    <input
+                      type="email"
+                      placeholder="seu@email.com"
+                      value={formData.email}
+                      onChange={e => handleChange('email', e.target.value)}
+                      maxLength={100}
+                    />
+                  </div>
+                  <div className="registro-form-group">
+                    <label>CRO <span className="required">*</span></label>
+                    <input
+                      type="text"
+                      placeholder="Número do CRO"
+                      value={applyCroMask(formData.cro)}
+                      onChange={e => handleChange('cro', e.target.value)}
+                      maxLength={15}
+                    />
+                  </div>
+                  <div className="registro-form-group full-width">
+                    <label>Senha <span className="required">*</span></label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="Mínimo 6 caracteres"
+                        value={formData.senha}
+                        onChange={e => handleChange('senha', e.target.value)}
+                        maxLength={255}
+                        style={{ paddingRight: '44px' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        style={{
+                          position: 'absolute',
+                          right: '12px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          color: 'var(--text-muted)',
+                          padding: '4px',
+                          display: 'flex'
+                        }}
+                      >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                    {formData.senha && (
+                      <>
+                        <div className="password-strength-bar">
+                          {[1, 2, 3, 4, 5].map(i => (
+                            <div
+                              key={i}
+                              className={`password-strength-segment ${i <= passwordStrength.level ? `filled ${passwordStrength.key}` : ''}`}
+                            />
+                          ))}
+                        </div>
+                        <span className={`password-strength-label ${passwordStrength.key}`}>
+                          Força: {passwordStrength.label}
+                        </span>
+                      </>
+                    )}
+                    <span className="input-hint">Use letras maiúsculas, números e caracteres especiais</span>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Step 4: Plano */}
+            {currentStep === 4 && (
+              <>
+                <div className="registro-section-title">
+                  <CreditCard size={20} /> Escolha seu Plano
+                </div>
+                {planosLoading ? (
+                  <div className="registro-loading">
+                    <div className="spinner" />
+                    <span>Carregando planos...</span>
+                  </div>
+                ) : (
+                  <div className="planos-grid">
+                    {planos.map(plano => (
+                      <div
+                        key={plano.id}
+                        className={`plano-card ${formData.planoId === plano.id ? 'selected' : ''}`}
+                        onClick={() => handleChange('planoId', plano.id)}
+                      >
+                        <span className="plano-nome">{plano.nome}</span>
+                        <span className="plano-preco">
+                          R$ {plano.precoMensal.toFixed(2).replace('.', ',')}
+                          <span>/mês</span>
+                        </span>
+                        <ul className="plano-features">
+                          <li>
+                            <Users size={14} color="var(--primary)" />
+                            Até {plano.limiteProfissionais} profissionais
+                          </li>
+                          <li>
+                            <UserCheck size={14} color="var(--primary)" />
+                            Até {plano.limitePacientes} pacientes
+                          </li>
+                          <li>
+                            {plano.permiteAutocadastroPaciente
+                              ? <Check size={14} color="var(--success)" />
+                              : <X size={14} color="var(--text-muted)" />
+                            }
+                            Autocadastro de paciente
+                          </li>
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Navigation */}
+            <div className="registro-actions">
+              {currentStep > 1 ? (
+                <button
+                  className="registro-btn registro-btn-secondary"
+                  onClick={handlePrev}
+                  type="button"
+                >
+                  <ArrowLeft size={18} /> Voltar
+                </button>
+              ) : (
+                <div />
+              )}
+
+              {currentStep < 4 ? (
+                <button
+                  className="registro-btn registro-btn-primary"
+                  onClick={handleNext}
+                  type="button"
+                >
+                  Próximo <ArrowRight size={18} />
+                </button>
+              ) : (
+                <button
+                  className="registro-btn registro-btn-primary"
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                  type="button"
+                >
+                  {submitting ? (
+                    <>
+                      <Loader2 size={18} className="spinner" style={{ border: 'none', width: '18px', height: '18px' }} />
+                      Registrando...
+                    </>
+                  ) : (
+                    <>
+                      Registrar Clínica <CheckCircle2 size={18} />
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Login link */}
+          <div className="registro-login-link">
+            Já possui uma conta? <a href="/entrar">Faça login</a>
+          </div>
+        </div>
       </div>
     </div>
   );
