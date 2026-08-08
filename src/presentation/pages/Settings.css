@@ -106,3 +106,111 @@ input:checked + .slider:before {
     align-self: flex-start;
   }
 }
+
+/* ==================== Subscription Card ==================== */
+.assinatura-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.assinatura-info-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--bg-main);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.assinatura-info-item:hover {
+  border-color: var(--border-light);
+  box-shadow: var(--shadow-sm);
+}
+
+.assinatura-info-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  background: rgba(2, 132, 199, 0.08);
+  color: var(--primary);
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.assinatura-info-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.assinatura-info-value {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+/* Status badges */
+.assinatura-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.assinatura-badge-ativa {
+  background: rgba(5, 150, 105, 0.1);
+  color: #059669;
+  border: 1px solid rgba(5, 150, 105, 0.2);
+}
+
+.assinatura-badge-trial {
+  background: rgba(2, 132, 199, 0.1);
+  color: #0284c7;
+  border: 1px solid rgba(2, 132, 199, 0.2);
+}
+
+.assinatura-badge-inadimplente {
+  background: rgba(217, 119, 6, 0.1);
+  color: #d97706;
+  border: 1px solid rgba(217, 119, 6, 0.2);
+}
+
+.assinatura-badge-cancelada {
+  background: rgba(220, 38, 38, 0.1);
+  color: #dc2626;
+  border: 1px solid rgba(220, 38, 38, 0.2);
+}
+
+.assinatura-badge-default {
+  background: var(--bg-surface-hover);
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
+}
+
+/* Loading spinner */
+.spin-animation {
+  animation: settingsSpin 1s linear infinite;
+}
+
+@keyframes settingsSpin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 576px) {
+  .assinatura-grid {
+    grid-template-columns: 1fr;
+  }
+}

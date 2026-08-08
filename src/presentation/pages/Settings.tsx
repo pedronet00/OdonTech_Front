@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Sliders, Shield, FileEdit, EyeOff, Save } from 'lucide-react';
+import { Sliders, Shield, FileEdit, EyeOff, Save, CreditCard, CalendarClock, Crown, Loader2 } from 'lucide-react';
 import { useAuth } from '../../application/contexts/AuthContext';
 import ApiClient from '../../infrastructure/api/apiClient';
+import { API_BASE_URL } from '../../infrastructure/config/api';
 import toast from 'react-hot-toast';
 import './Settings.css';
 
@@ -12,11 +13,41 @@ interface ClinicaConfiguracoes {
   profissionaisSoPodemVerSeusAtendimentos: boolean;
 }
 
+interface Assinatura {
+  status: string;
+  planoNome: string;
+  trialExpiraEm: string | null;
+  proximaCobranca: string | null;
+}
+
+function getStatusLabel(status: string): { label: string; className: string } {
+  const map: Record<string, { label: string; className: string }> = {
+    'Ativa': { label: 'Ativa', className: 'assinatura-badge-ativa' },
+    'TrialAtivo': { label: 'Trial Ativo', className: 'assinatura-badge-trial' },
+    'Inadimplente': { label: 'Inadimplente', className: 'assinatura-badge-inadimplente' },
+    'Cancelada': { label: 'Cancelada', className: 'assinatura-badge-cancelada' },
+    'Expirada': { label: 'Expirada', className: 'assinatura-badge-cancelada' },
+  };
+  return map[status] || { label: status, className: 'assinatura-badge-default' };
+}
+
+function formatDate(dateStr: string | null): string {
+  if (!dateStr) return '—';
+  try {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+  } catch {
+    return dateStr;
+  }
+}
+
 export function Settings() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [configs, setConfigs] = useState<ClinicaConfiguracoes | null>(null);
+  const [assinatura, setAssinatura] = useState<Assinatura | null>(null);
+  const [assinaturaLoading, setAssinaturaLoading] = useState(true);
 
   useEffect(() => {
     async function loadConfigs() {
@@ -33,7 +64,21 @@ export function Settings() {
       }
     }
 
+    async function loadAssinatura() {
+      try {
+        setAssinaturaLoading(true);
+        const baseUrl = API_BASE_URL.replace('/api/v1', '/api');
+        const data = await ApiClient.get<Assinatura>(`${baseUrl}/Assinaturas/minha`);
+        setAssinatura(data);
+      } catch (err: any) {
+        console.error('Erro ao carregar assinatura:', err);
+      } finally {
+        setAssinaturaLoading(false);
+      }
+    }
+
     loadConfigs();
+    loadAssinatura();
   }, [user?.clinica_id]);
 
   const handleToggleAlterarAtendimentos = () => {
@@ -90,6 +135,8 @@ export function Settings() {
     );
   }
 
+  const statusInfo = assinatura ? getStatusLabel(assinatura.status) : null;
+
   return (
     <div className="animate-fade-in settings-page-container">
       <div className="flex-row justify-between items-center" style={{ marginBottom: '32px', gap: '16px' }}>
@@ -103,6 +150,73 @@ export function Settings() {
         </div>
       </div>
 
+      {/* Subscription Section */}
+      <div className="glass-panel assinatura-card" style={{ padding: '28px 32px', marginBottom: '24px' }}>
+        <h2 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '16px' }}>
+          <CreditCard size={20} style={{ color: 'var(--primary)' }} /> Assinatura
+        </h2>
+
+        {assinaturaLoading ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-muted)', padding: '12px 0' }}>
+            <Loader2 size={18} className="spin-animation" />
+            Carregando dados da assinatura...
+          </div>
+        ) : assinatura ? (
+          <div className="assinatura-grid">
+            <div className="assinatura-info-item">
+              <div className="assinatura-info-icon">
+                <Crown size={20} />
+              </div>
+              <div>
+                <span className="assinatura-info-label">Plano</span>
+                <span className="assinatura-info-value">{assinatura.planoNome}</span>
+              </div>
+            </div>
+
+            <div className="assinatura-info-item">
+              <div className="assinatura-info-icon">
+                <Shield size={20} />
+              </div>
+              <div>
+                <span className="assinatura-info-label">Status</span>
+                <span className={`assinatura-badge ${statusInfo?.className}`}>
+                  {statusInfo?.label}
+                </span>
+              </div>
+            </div>
+
+            {assinatura.trialExpiraEm && (
+              <div className="assinatura-info-item">
+                <div className="assinatura-info-icon">
+                  <CalendarClock size={20} />
+                </div>
+                <div>
+                  <span className="assinatura-info-label">Trial expira em</span>
+                  <span className="assinatura-info-value">{formatDate(assinatura.trialExpiraEm)}</span>
+                </div>
+              </div>
+            )}
+
+            {assinatura.proximaCobranca && (
+              <div className="assinatura-info-item">
+                <div className="assinatura-info-icon">
+                  <CalendarClock size={20} />
+                </div>
+                <div>
+                  <span className="assinatura-info-label">Próxima cobrança</span>
+                  <span className="assinatura-info-value">{formatDate(assinatura.proximaCobranca)}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+            Não foi possível carregar os dados da assinatura.
+          </p>
+        )}
+      </div>
+
+      {/* Existing Settings Form */}
       <form onSubmit={handleSave} className="glass-panel settings-form" style={{ padding: '32px' }}>
         <h2 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '28px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '16px' }}>
           <Shield size={20} style={{ color: 'var(--primary)' }} /> Preferências do Sistema
@@ -167,3 +281,4 @@ export function Settings() {
     </div>
   );
 }
+
