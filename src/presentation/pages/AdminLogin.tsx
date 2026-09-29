@@ -48,7 +48,7 @@ async function selecionarClinica(globalToken: string, clinicaId: string): Promis
   let result: ApiResponse<SelecionarClinicaResponse> | null = null;
   try {
     result = await response.json();
-  } catch (e) {}
+  } catch (e) { }
 
   if (result?.isSuccess && result.data) {
     return result.data;
@@ -212,7 +212,7 @@ export function AdminLogin() {
                     <Mail size={18} />
                     <input
                       type="email"
-                      placeholder="admin@odontech.app.br"
+                      placeholder="teste@gmail.com"
                       maxLength={100}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
