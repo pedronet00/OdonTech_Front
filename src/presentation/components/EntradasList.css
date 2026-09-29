@@ -1,0 +1,367 @@
+/* ==================== ENTRADAS DO MÊS (livro-caixa) ==================== */
+.entradas-panel {
+  margin-top: 24px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.entradas-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.entradas-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--primary);
+}
+
+.entradas-heading h3 {
+  font-size: 1.1rem;
+  color: var(--text-main);
+}
+
+.entradas-tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* Filtro segmentado por situação */
+.entradas-filtros {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  background: var(--bg-main);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+}
+
+.entradas-filtro {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 7px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.entradas-filtro span {
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+}
+
+.entradas-filtro:hover {
+  color: var(--text-main);
+}
+
+.entradas-filtro.active {
+  background: var(--bg-surface);
+  color: var(--text-main);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.entradas-busca {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.entradas-busca > svg {
+  position: absolute;
+  left: 10px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.entradas-busca input {
+  width: 240px;
+  padding: 8px 30px 8px 32px;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  background: var(--bg-surface);
+  color: var(--text-main);
+  font-size: 0.85rem;
+  font-family: var(--font-sans);
+}
+
+.entradas-busca input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1);
+}
+
+.entradas-busca button {
+  position: absolute;
+  right: 8px;
+  display: flex;
+  color: var(--text-muted);
+}
+
+.entradas-filtro:focus-visible,
+.entradas-busca button:focus-visible,
+.entrada-paciente:focus-visible,
+.entradas-vazio button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Grupos por dia de vencimento: o número do dia funciona como marcador lateral */
+.entradas-dias {
+  padding: 8px 24px;
+}
+
+.entradas-dia {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 16px;
+  padding: 16px 0;
+}
+
+.entradas-dia + .entradas-dia {
+  border-top: 1px dashed var(--border-subtle);
+}
+
+.entradas-dia-marker {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  padding-top: 2px;
+}
+
+.entradas-dia-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 8px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.entradas-dia-header .entradas-valor {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.entradas-valor {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.entradas-itens {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.entrada-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 90px 170px 120px;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 12px;
+  margin: 0 -12px;
+  border-radius: 8px;
+}
+
+.entrada-item:hover {
+  background: var(--bg-surface-hover);
+}
+
+.entrada-quem {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.entrada-paciente,
+.entradas-busca button,
+.entradas-vazio button {
+  padding: 0;
+}
+
+.entrada-paciente {
+  align-self: flex-start;
+  max-width: 100%;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-main);
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-sans);
+}
+
+.entrada-paciente:hover {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.entrada-descricao {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.entrada-forma {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.entrada-situacao {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.entrada-situacao i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--warning);
+}
+
+.entrada-valor {
+  text-align: right;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.entrada-item.status-pago .entrada-situacao i {
+  background: var(--success);
+}
+
+.entrada-item.status-pago .entrada-situacao {
+  color: var(--success);
+}
+
+.entrada-item.vencido .entrada-situacao {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.entrada-item.vencido .entrada-situacao i {
+  background: var(--danger);
+}
+
+.entrada-item.status-cancelado .entrada-situacao i {
+  background: var(--border-light);
+}
+
+.entrada-item.status-cancelado .entrada-valor,
+.entrada-item.status-cancelado .entrada-paciente {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.entradas-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 24px;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-main);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.entradas-footer .entradas-valor {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.entradas-vazio {
+  padding: 48px 24px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.entradas-vazio button {
+  color: var(--primary);
+  font-weight: 500;
+  font-family: var(--font-sans);
+}
+
+@media (max-width: 1024px) {
+  .entrada-item {
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: 4px;
+  }
+
+  .entrada-forma {
+    display: none;
+  }
+
+  .entrada-situacao {
+    grid-column: 1 / 2;
+    grid-row: 2;
+  }
+
+  .entrada-valor {
+    grid-column: 2 / 3;
+    grid-row: 1 / 3;
+  }
+}
+
+@media (max-width: 768px) {
+  .entradas-header,
+  .entradas-dias,
+  .entradas-footer {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .entradas-tools,
+  .entradas-busca,
+  .entradas-busca input {
+    width: 100%;
+  }
+
+  .entradas-filtros {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .entradas-filtro {
+    flex: 1;
+    justify-content: center;
+    white-space: nowrap;
+  }
+
+  .entradas-dia {
+    grid-template-columns: 36px minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .entradas-dia-marker {
+    font-size: 1.4rem;
+  }
+}

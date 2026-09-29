@@ -1,0 +1,100 @@
+.modal-content.signature-modal {
+  width: 80vw;
+  min-width: min(900px, 95vw);
+  max-width: 1100px;
+}
+
+.signature-pad-wrapper {
+  position: relative;
+  width: 100%;
+  height: 340px;
+  background: #ffffff;
+  border: 2px dashed var(--border-light);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.signature-pad-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: crosshair;
+  /* Impede que o gesto de assinar role a página ou dê zoom no tablet/celular */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  z-index: 1;
+}
+
+.signature-pad-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #94a3b8;
+  font-size: 0.95rem;
+  pointer-events: none;
+}
+
+.signature-pad-baseline {
+  position: absolute;
+  left: 32px;
+  right: 32px;
+  bottom: 48px;
+  border-bottom: 1px solid #cbd5e1;
+  pointer-events: none;
+}
+
+.signature-pad-name {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 20px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: #64748b;
+  pointer-events: none;
+}
+
+.signature-modal-summary {
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  background: var(--bg-surface-hover);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  font-size: 0.88rem;
+  color: var(--text-main);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.signature-modal-summary span {
+  color: var(--text-muted);
+}
+
+.signature-modal-summary p {
+  white-space: pre-wrap;
+  max-height: 96px;
+  overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+  .modal-content.signature-modal {
+    width: 95vw;
+    min-width: unset;
+  }
+
+  .signature-pad-wrapper {
+    height: 240px;
+  }
+
+  .signature-modal-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+}

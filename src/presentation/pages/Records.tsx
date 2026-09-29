@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FilePlus, Activity, ArrowLeft, Calendar, User, MoreVertical, Edit, Trash2, X, File, Download, Image, Upload, FileText, DollarSign, Check, ChevronRight } from 'lucide-react';
+import { FilePlus, Activity, ArrowLeft, Calendar, User, MoreVertical, Edit, Trash2, X, File, Download, Image, Upload, FileText, DollarSign, Check, ChevronRight, PenLine, FileCheck } from 'lucide-react';
 import { useAuth } from '../../application/contexts/AuthContext';
 import ApiClient from '../../infrastructure/api/apiClient';
-import type { Atendimento, Patient, Pagamento } from '../../domain/models/types';
+import { SignatureModal } from '../components/SignatureModal';
+import type { Atendimento, Patient, Pagamento, TermoAssinatura } from '../../domain/models/types';
 import { FormaPagamentoEnum, StatusPagamentoEnum } from '../../domain/models/types';
 import toast from 'react-hot-toast';
+import './Records.css';
 
 const formatCriacaoDate = (dateStr?: string | null) => {
   if (!dateStr || dateStr.startsWith('0001-01-01')) return null;
@@ -61,11 +63,33 @@ export function Records() {
   const [paymentsMap, setPaymentsMap] = useState<{ [key: string]: Pagamento[] }>({});
 
   // File management state
-  const [activeTab, setActiveTab] = useState<'timeline' | 'files'>('timeline');
+  const [activeTab, setActiveTab] = useState<'timeline' | 'files' | 'signatures'>('timeline');
   const [arquivos, setArquivos] = useState<any[]>([]);
   const [filesLoading, setFilesLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [statusSubmenuOpen, setStatusSubmenuOpen] = useState<string | null>(null);
+
+  // Termos de atendimento assinados; termosMap guarda o mais recente de cada atendimento
+  const [termos, setTermos] = useState<TermoAssinatura[]>([]);
+  const [termosLoading, setTermosLoading] = useState(false);
+  const termosMap = useMemo(() => {
+    const map: { [atendimentoId: string]: TermoAssinatura } = {};
+    termos.forEach(termo => {
+      const atual = map[termo.atendimentoId];
+      if (!atual || new Date(termo.assinadoEmUtc) > new Date(atual.assinadoEmUtc)) {
+        map[termo.atendimentoId] = termo;
+      }
+    });
+    return map;
+  }, [termos]);
+  const termosOrdenados = useMemo(
+    () => [...termos].sort((a, b) => new Date(b.assinadoEmUtc).getTime() - new Date(a.assinadoEmUtc).getTime()),
+    [termos]
+  );
+  const atendimentosSemTermo = atendimentos.filter(a => !termosMap[a.id] && a.statusAtendimento !== 'Cancelado');
+  const [signingAtendimento, setSigningAtendimento] = useState<Atendimento | null>(null);
+  const [isSavingSignature, setIsSavingSignature] = useState(false);
+  const [downloadingTermoId, setDownloadingTermoId] = useState<string | null>(null);
 
   const statusMap: { [key: string]: number } = {
     'Pendente': 1,
@@ -132,7 +156,61 @@ export function Records() {
   useEffect(() => {
     fetchData();
     fetchArquivos();
+    fetchTermos();
   }, [id, token]);
+
+  const fetchTermos = async () => {
+    if (!id) return;
+    try {
+      setTermosLoading(true);
+      const data = await ApiClient.get<TermoAssinatura[]>(`/pacientes/${id}/termos`);
+      setTermos(data || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setTermosLoading(false);
+    }
+  };
+
+  const handleConfirmSignature = async (assinaturaBase64: string) => {
+    if (!id || !signingAtendimento) return;
+    try {
+      setIsSavingSignature(true);
+      const termo = await ApiClient.post<TermoAssinatura>(`/pacientes/${id}/termos`, {
+        atendimentoId: signingAtendimento.id,
+        assinaturaBase64
+      });
+      setTermos(prev => [...prev, termo]);
+      toast.success('Termo assinado com sucesso!');
+      setSigningAtendimento(null);
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao salvar assinatura.');
+    } finally {
+      setIsSavingSignature(false);
+    }
+  };
+
+  const handleDownloadTermo = async (termo: TermoAssinatura) => {
+    try {
+      setDownloadingTermoId(termo.id);
+      const response = await ApiClient.request(`/pacientes/${id}/termos/${termo.id}/download`);
+      if (!response.ok) throw new Error('Falha no download');
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `termo-atendimento-${new Date(termo.dataAtendimento).toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      toast.error('Erro ao baixar o termo assinado.');
+    } finally {
+      setDownloadingTermoId(null);
+    }
+  };
 
   const fetchArquivos = async () => {
     if (!id) return;
@@ -554,6 +632,13 @@ export function Records() {
         >
           <FileText size={18} /> Arquivos e Exames
         </button>
+        <button
+          className={`tab-button ${activeTab === 'signatures' ? 'active' : ''}`}
+          onClick={() => setActiveTab('signatures')}
+        >
+          <PenLine size={18} /> Assinaturas
+          {termos.length > 0 && <span className="tab-count">{termos.length}</span>}
+        </button>
       </div>
 
       {activeTab === 'timeline' ? (
@@ -623,6 +708,25 @@ export function Records() {
                         >
                           <FileText size={14} /> Imprimir Registro
                         </button> */}
+                        {termosMap[atendimento.id] ? (
+                          <button
+                            className="btn btn-secondary"
+                            style={{ fontSize: '0.8rem', color: '#16a34a', borderColor: '#bbf7d0' }}
+                            onClick={() => handleDownloadTermo(termosMap[atendimento.id])}
+                            disabled={downloadingTermoId === termosMap[atendimento.id].id}
+                            title={`Assinado em ${formatCriacaoDate(termosMap[atendimento.id].assinadoEmUtc) ?? ''} — clique para baixar o PDF`}
+                          >
+                            <FileCheck size={14} /> {downloadingTermoId === termosMap[atendimento.id].id ? 'Baixando...' : 'Termo Assinado'}
+                          </button>
+                        ) : (
+                          <button
+                            className="btn btn-secondary"
+                            style={{ fontSize: '0.8rem' }}
+                            onClick={() => setSigningAtendimento(atendimento)}
+                          >
+                            <PenLine size={14} /> Coletar Assinatura
+                          </button>
+                        )}
                         <button
                           className="btn"
                           style={{ fontSize: '0.8rem', backgroundColor: '#22c55e', color: '#fff', border: 'none' }}
@@ -848,6 +952,95 @@ export function Records() {
             <div className="glass-panel" style={{ padding: '64px', textAlign: 'center', color: 'var(--text-muted)' }}>
               <Activity size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
               <p>Nenhum atendimento registrado para este paciente.</p>
+            </div>
+          )}
+        </div>
+      ) : activeTab === 'signatures' ? (
+        <div className="animate-fade-in">
+          <div className="termos-header">
+            <div>
+              <h3 style={{ fontSize: '1.25rem' }}>Termos assinados</h3>
+              <p className="termos-header-sub">
+                {atendimentos.length > 0
+                  ? `${atendimentos.length - atendimentosSemTermo.length} de ${atendimentos.length} atendimentos com termo assinado pelo paciente.`
+                  : 'Os termos assinados pelo paciente em cada atendimento aparecem aqui.'}
+              </p>
+            </div>
+          </div>
+
+          {atendimentosSemTermo.length > 0 && !termosLoading && (
+            <div className="termos-pendentes">
+              <div className="termos-pendentes-title">
+                <PenLine size={16} />
+                {atendimentosSemTermo.length === 1
+                  ? '1 atendimento aguardando assinatura'
+                  : `${atendimentosSemTermo.length} atendimentos aguardando assinatura`}
+              </div>
+              <div className="termos-pendentes-list">
+                {atendimentosSemTermo.map(a => (
+                  <button key={a.id} type="button" className="termos-pendente-chip" onClick={() => setSigningAtendimento(a)}>
+                    {a.tipoAtendimento}, {new Date(a.dataAtendimento).toLocaleDateString('pt-BR')}
+                    <span>Coletar</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {termosLoading ? (
+            <div className="glass-panel" style={{ padding: '48px', textAlign: 'center' }}>
+              <p>Carregando assinaturas...</p>
+            </div>
+          ) : termosOrdenados.length > 0 ? (
+            <div className="glass-panel termos-list">
+              {termosOrdenados.map(termo => {
+                const assinadoEm = formatCriacaoDate(termo.assinadoEmUtc);
+                return (
+                  <div key={termo.id} className="termo-row">
+                    <div className="termo-icon">
+                      <FileCheck size={22} />
+                    </div>
+
+                    <div className="termo-main">
+                      <div className="termo-title">
+                        {termo.descricaoAtendimento || 'Atendimento'}
+                      </div>
+                      <div className="termo-meta">
+                        <span><Calendar size={13} /> Atendimento em {new Date(termo.dataAtendimento).toLocaleDateString('pt-BR')}</span>
+                        <span><User size={13} /> {termo.nomeProfissional}</span>
+                      </div>
+                    </div>
+
+                    <div className="termo-signed">
+                      <span className="termo-signed-label">Assinado por {termo.nomePaciente}</span>
+                      <span className="termo-signed-date">{assinadoEm ?? '—'}</span>
+                    </div>
+
+                    <div className="termo-hash" title={`Hash SHA-256 do documento:\n${termo.hashDocumento}`}>
+                      <span className="termo-hash-label">Código de verificação</span>
+                      <code>{termo.hashDocumento.slice(0, 8)}…{termo.hashDocumento.slice(-8)}</code>
+                    </div>
+
+                    <button
+                      className="btn btn-secondary termo-download"
+                      onClick={() => handleDownloadTermo(termo)}
+                      disabled={downloadingTermoId === termo.id}
+                    >
+                      <Download size={14} /> {downloadingTermoId === termo.id ? 'Baixando...' : 'Baixar PDF'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="glass-panel" style={{ padding: '64px', textAlign: 'center', color: 'var(--text-muted)' }}>
+              <PenLine size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
+              <p>Nenhum termo assinado por este paciente.</p>
+              <p style={{ fontSize: '0.9rem' }}>
+                {atendimentosSemTermo.length > 0
+                  ? 'Escolha um atendimento acima para coletar a assinatura.'
+                  : 'Registre um atendimento e colete a assinatura do paciente pela linha do tempo.'}
+              </p>
             </div>
           )}
         </div>
@@ -1237,6 +1430,28 @@ export function Records() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Modal de Assinatura do Termo de Atendimento */}
+      {signingAtendimento && (
+        <SignatureModal
+          title="Assinatura do Termo de Atendimento"
+          signerName={patient?.nome || signingAtendimento.nomePaciente}
+          isSaving={isSavingSignature}
+          onCancel={() => setSigningAtendimento(null)}
+          onConfirm={handleConfirmSignature}
+        >
+          <div className="signature-modal-summary">
+            <div>
+              <strong>{signingAtendimento.tipoAtendimento}</strong>
+              <span> · {new Date(signingAtendimento.dataAtendimento).toLocaleDateString('pt-BR')} · {signingAtendimento.nomeProfissional}</span>
+            </div>
+            {signingAtendimento.descricao && <p>{signingAtendimento.descricao}</p>}
+            <span style={{ fontSize: '0.8rem', marginTop: '4px' }}>
+              Ao assinar, o paciente declara estar ciente do procedimento realizado descrito acima.
+            </span>
+          </div>
+        </SignatureModal>
       )}
 
       {/* Estrutura de Impressão (Invisível no navegador, visível no Print)

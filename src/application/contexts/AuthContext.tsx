@@ -10,6 +10,7 @@ export interface User {
   clinica_id: string;
   clinica_nome: string;
   cro: string;
+  contexto_admin?: string;
   exp: number;
   iss: string;
   aud: string;

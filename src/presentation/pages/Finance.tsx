@@ -3,6 +3,7 @@ import { DollarSign, TrendingUp, CreditCard, Calendar, Briefcase, PieChart, Arro
 import { useAuth } from '../../application/contexts/AuthContext';
 import ApiClient from '../../infrastructure/api/apiClient';
 import type { FinanceDashboard, MonthData } from '../../domain/models/types';
+import { EntradasList } from '../components/EntradasList';
 import toast from 'react-hot-toast';
 
 export function Finance() {
@@ -298,6 +299,11 @@ export function Finance() {
               )}
             </div>
           </div>
+
+          <EntradasList
+            entradas={selectedMonth.entradas ?? []}
+            nomeMes={selectedMonth.nomeMes}
+          />
         </>
       )}
     </div>

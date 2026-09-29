@@ -47,6 +47,21 @@ export interface Atendimento {
   nomeUsuarioCriacao?: string | null;
 }
 
+export interface TermoAssinatura {
+  id: string;
+  atendimentoId: string;
+  pacienteId: string;
+  nomePaciente: string;
+  nomeProfissional: string;
+  descricaoAtendimento: string;
+  dataAtendimento: string;
+  assinadoEmUtc: string;
+  versaoTemplate: string;
+  hashConteudo: string;
+  hashDocumento: string;
+  tamanhoPdfBytes: number;
+}
+
 export interface RecordEntry {
   id: string;
   patientId: string;
@@ -255,6 +270,22 @@ export interface MonthData {
   formasPagamento: FormaPagamentoData[];
   receitaPorProfissional: ReceitaProfissional[];
   receitaPorTipoAtendimento: ReceitaTipoAtendimento[];
+  entradas?: EntradaFinanceira[];
+}
+
+export interface EntradaFinanceira {
+  pagamentoId: string;
+  pacienteId: string;
+  nomePaciente: string;
+  atendimentoId: string | null;
+  descricaoAtendimento: string | null;
+  nomeProfissional: string | null;
+  valor: number;
+  formaPagamento: string;
+  statusPagamento: string;
+  dataVencimento: string;
+  dataPagamento: string | null;
+  observacao: string | null;
 }
 
 export interface StatusPagamentos {

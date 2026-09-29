@@ -1,0 +1,242 @@
+/* ==================== ABA ASSINATURAS ==================== */
+
+/* Três abas não cabem lado a lado em telas estreitas */
+.tabs-container {
+  overflow-x: auto;
+}
+
+.tab-button {
+  white-space: nowrap;
+}
+
+.tab-count {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--bg-surface-hover);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tab-button.active .tab-count {
+  background: rgba(2, 132, 199, 0.12);
+  border-color: rgba(2, 132, 199, 0.2);
+  color: var(--primary);
+}
+
+.termos-header {
+  margin-bottom: 20px;
+}
+
+.termos-header-sub {
+  margin-top: 4px;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+/* Atendimentos ainda sem termo: atalho direto para coletar */
+.termos-pendentes {
+  margin-bottom: 20px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+}
+
+.termos-pendentes-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #92400e;
+  margin-bottom: 10px;
+}
+
+.termos-pendentes-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.termos-pendente-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 6px 6px 12px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid #fde68a;
+  color: var(--text-main);
+  font-size: 0.82rem;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: border-color var(--transition-fast);
+}
+
+.termos-pendente-chip span {
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: #f59e0b;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.termos-pendente-chip:hover {
+  border-color: #f59e0b;
+}
+
+.termos-pendente-chip:focus-visible,
+.termo-download:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Lista de termos assinados */
+.termos-list {
+  padding: 0;
+  overflow: hidden;
+}
+
+.termo-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1.6fr) minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 20px;
+  padding: 18px 24px;
+}
+
+.termo-row + .termo-row {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.termo-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: rgba(22, 163, 74, 0.08);
+  border: 1px solid rgba(22, 163, 74, 0.18);
+  color: #16a34a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.termo-main {
+  min-width: 0;
+}
+
+.termo-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-main);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.termo-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin-top: 4px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.termo-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.termo-signed {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: 0.82rem;
+}
+
+.termo-signed-label {
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.termo-signed-date {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.termo-hash {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  cursor: help;
+}
+
+.termo-hash-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.termo-hash code {
+  font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+  font-size: 0.8rem;
+  color: var(--text-main);
+  letter-spacing: 0.02em;
+}
+
+.termo-download {
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 1024px) {
+  .termo-row {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    row-gap: 12px;
+  }
+
+  .termo-signed {
+    grid-column: 2 / 3;
+  }
+
+  .termo-hash {
+    grid-column: 3 / 4;
+    grid-row: 2;
+  }
+
+  .termo-download {
+    grid-column: 3 / 4;
+    grid-row: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .termo-row {
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: 16px;
+    gap: 12px 14px;
+  }
+
+  .termo-signed,
+  .termo-hash,
+  .termo-download {
+    grid-column: 2 / 3;
+    grid-row: auto;
+  }
+
+  .termo-download {
+    justify-self: start;
+  }
+}
