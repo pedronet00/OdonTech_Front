@@ -1139,3 +1139,68 @@ select {
   color: var(--text-main);
   background: var(--bg-surface);
 }
+/* Confirmation dialogs (SweetAlert2), styled like the app — see src/utils/alerts.ts */
+.swal2-container {
+  z-index: 10000; /* above .modal-overlay */
+}
+
+.swal2-container.swal2-backdrop-show {
+  background: rgba(15, 23, 42, 0.4);
+}
+
+.app-swal.swal2-popup {
+  width: min(420px, calc(100vw - 32px));
+  padding: 28px 24px 24px;
+  border-radius: 16px;
+  font-family: var(--font-sans);
+  color: var(--text-main);
+  box-shadow: var(--shadow-lg);
+}
+
+.app-swal .app-swal-icon.swal2-icon {
+  margin: 0 auto 16px;
+  transform: scale(0.75);
+}
+
+.app-swal .app-swal-title {
+  padding: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-main);
+  letter-spacing: -0.01em;
+}
+
+.app-swal .app-swal-text {
+  margin: 8px 0 0;
+  padding: 0;
+  font-size: 0.925rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.app-swal .app-swal-actions {
+  width: 100%;
+  margin: 24px 0 0;
+  gap: 10px;
+  flex-wrap: nowrap;
+}
+
+.app-swal .app-swal-actions .btn {
+  flex: 1;
+  height: 42px;
+  margin: 0;
+}
+
+.app-swal .app-swal-actions .btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.app-swal .app-swal-danger {
+  background: var(--danger);
+  color: #fff;
+}
+
+.app-swal .app-swal-danger:hover {
+  background: #b91c1c;
+}

@@ -9,7 +9,8 @@ import {
   X,
   Settings as SettingsIcon,
   ChevronsLeft,
-  ChevronsRight
+  ChevronsRight,
+  CalendarDays
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '../../application/contexts/AuthContext';
@@ -59,7 +60,7 @@ export function Layout() {
         </div>
 
         <nav className="sidebar-nav">
-          {/* <NavLink
+          <NavLink
             to="/agenda"
             className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
             onClick={() => setIsMobileMenuOpen(false)}
@@ -67,7 +68,7 @@ export function Layout() {
           >
             <CalendarDays className="nav-icon" />
             {!isSidebarCollapsed && <span>Agenda</span>}
-          </NavLink> */}
+          </NavLink>
 
           <NavLink
             to="/financeiro"

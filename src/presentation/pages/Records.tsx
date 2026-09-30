@@ -1,12 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FilePlus, Activity, ArrowLeft, Calendar, User, MoreVertical, Edit, Trash2, X, File, Download, Image, Upload, FileText, DollarSign, Check, ChevronRight, PenLine, FileCheck } from 'lucide-react';
+import { FilePlus, Activity, ArrowLeft, Calendar, User, MoreVertical, Edit, Trash2, X, File, Download, Image, Upload, FileText, DollarSign, Check, CircleCheck, CircleX, PenLine, FileCheck } from 'lucide-react';
 import { useAuth } from '../../application/contexts/AuthContext';
 import ApiClient from '../../infrastructure/api/apiClient';
 import { SignatureModal } from '../components/SignatureModal';
 import type { Atendimento, Patient, Pagamento, TermoAssinatura } from '../../domain/models/types';
 import { FormaPagamentoEnum, StatusPagamentoEnum } from '../../domain/models/types';
 import toast from 'react-hot-toast';
+import { confirmAction } from '../../utils/alerts';
 import './Records.css';
 
 const formatCriacaoDate = (dateStr?: string | null) => {
@@ -67,7 +68,6 @@ export function Records() {
   const [arquivos, setArquivos] = useState<any[]>([]);
   const [filesLoading, setFilesLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [statusSubmenuOpen, setStatusSubmenuOpen] = useState<string | null>(null);
 
   // Termos de atendimento assinados; termosMap guarda o mais recente de cada atendimento
   const [termos, setTermos] = useState<TermoAssinatura[]>([]);
@@ -266,7 +266,13 @@ export function Records() {
   };
 
   const handleDeleteArquivo = async (arquivoId: string) => {
-    if (!window.confirm('Excluir este arquivo permanentemente?')) return;
+    const confirmed = await confirmAction({
+      title: 'Excluir arquivo?',
+      text: 'Tem certeza? O arquivo será apagado permanentemente.',
+      confirmText: 'Sim, excluir',
+      danger: true,
+    });
+    if (!confirmed) return;
     try {
       await ApiClient.delete(`/pacientes/${id}/arquivos/${arquivoId}`);
       toast.success('Arquivo excluído!');
@@ -276,20 +282,29 @@ export function Records() {
     }
   };
 
-  const handleStatusUpdate = async (atendimentoId: string, newStatusText: string) => {
-    if (newStatusText === 'Concluido' || newStatusText === 'Cancelado') {
-      const confirmed = window.confirm(`Deseja realmente marcar como ${newStatusText}? Esta ação não poderá ser desfeita e o registro não poderá mais ser editado ou excluído.`);
-      if (!confirmed) {
-        setActiveDropdown(null);
-        return;
-      }
-    }
+  const handleStatusUpdate = async (atendimentoId: string, newStatusText: 'Concluido' | 'Cancelado') => {
+    setActiveDropdown(null);
+    const isClosing = newStatusText === 'Concluido';
+    const confirmed = await confirmAction(isClosing
+      ? {
+          title: 'Encerrar atendimento?',
+          text: 'Tem certeza? O atendimento será finalizado e não poderá mais ser editado nem excluído.',
+          confirmText: 'Sim, encerrar',
+        }
+      : {
+          title: 'Cancelar atendimento?',
+          text: 'Tem certeza? O atendimento será cancelado e não poderá mais ser editado nem excluído.',
+          confirmText: 'Sim, cancelar',
+          cancelText: 'Manter atendimento',
+          danger: true,
+        });
+    if (!confirmed) return;
 
     try {
       setUpdatingId(atendimentoId);
       await ApiClient.patch(`/atendimentos/${atendimentoId}/status?status=${newStatusText}`);
 
-      toast.success('Status atualizado com sucesso!');
+      toast.success(newStatusText === 'Concluido' ? 'Atendimento encerrado.' : 'Atendimento cancelado.');
       setActiveDropdown(null);
       await fetchData();
     } catch (err: any) {
@@ -384,7 +399,14 @@ export function Records() {
   };
 
   const handleDelete = async (atendimentoId: string) => {
-    if (!window.confirm('Deseja realmente excluir este atendimento?')) return;
+    setActiveDropdown(null);
+    const confirmed = await confirmAction({
+      title: 'Excluir atendimento?',
+      text: 'Tem certeza? O atendimento será apagado permanentemente.',
+      confirmText: 'Sim, excluir',
+      danger: true,
+    });
+    if (!confirmed) return;
 
     try {
       setUpdatingId(atendimentoId);
@@ -477,7 +499,14 @@ export function Records() {
   };
 
   const handleCancelPaymentItem = async (paymentId: string, atendimentoId: string) => {
-    if (!window.confirm('Deseja realmente cancelar este pagamento?')) return;
+    const confirmed = await confirmAction({
+      title: 'Cancelar pagamento?',
+      text: 'Tem certeza que deseja cancelar este pagamento?',
+      confirmText: 'Sim, cancelar',
+      cancelText: 'Manter pagamento',
+      danger: true,
+    });
+    if (!confirmed) return;
     try {
       await ApiClient.patch(`/pagamentos/${paymentId}/cancelar`);
       toast.success('Pagamento cancelado!');
@@ -489,7 +518,13 @@ export function Records() {
   };
 
   const handleDeletePaymentItem = async (paymentId: string, atendimentoId: string) => {
-    if (!window.confirm('Deseja excluir permanentemente este pagamento?')) return;
+    const confirmed = await confirmAction({
+      title: 'Excluir pagamento?',
+      text: 'Tem certeza? O pagamento será apagado permanentemente.',
+      confirmText: 'Sim, excluir',
+      danger: true,
+    });
+    if (!confirmed) return;
     try {
       await ApiClient.delete(`/pagamentos/${paymentId}`);
       toast.success('Pagamento excluído!');
@@ -773,55 +808,25 @@ export function Records() {
                                       >
                                         <Edit size={16} /> Editar
                                       </button>
-                                      <div style={{ borderTop: '1px solid var(--border-subtle)', margin: '4px 0' }}></div>
-                                      <div
-                                        style={{ position: 'relative' }}
-                                        onMouseEnter={() => setStatusSubmenuOpen(atendimento.id)}
-                                        onMouseLeave={() => setStatusSubmenuOpen(null)}
-                                      >
-                                        <button
-                                          className="dropdown-item"
-                                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setStatusSubmenuOpen(statusSubmenuOpen === atendimento.id ? null : atendimento.id);
-                                          }}
-                                          disabled={updatingId === atendimento.id}
-                                        >
-                                          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <Activity size={16} /> Alterar Status
-                                          </span>
-                                          <ChevronRight size={14} />
-                                        </button>
-                                        {statusSubmenuOpen === atendimento.id && (
-                                          <div
-                                            className="dropdown-menu"
-                                            style={{
-                                              position: 'absolute',
-                                              left: '100%',
-                                              top: 0,
-                                              minWidth: '150px',
-                                              zIndex: 1001,
-                                              boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
-                                            }}
+                                      {!isFinalized && (
+                                        <>
+                                          <div style={{ borderTop: '1px solid var(--border-subtle)', margin: '4px 0' }}></div>
+                                          <button
+                                            className="dropdown-item"
+                                            onClick={() => handleStatusUpdate(atendimento.id, 'Concluido')}
+                                            disabled={updatingId === atendimento.id}
                                           >
-                                            {Object.keys(statusMap).map(status => (
-                                              <button
-                                                key={status}
-                                                className="dropdown-item"
-                                                onClick={() => {
-                                                  handleStatusUpdate(atendimento.id, status);
-                                                  setStatusSubmenuOpen(null);
-                                                }}
-                                                disabled={updatingId === atendimento.id}
-                                                style={{ padding: '6px 12px' }}
-                                              >
-                                                {status}
-                                              </button>
-                                            ))}
-                                          </div>
-                                        )}
-                                      </div>
+                                            <CircleCheck size={16} /> Encerrar atendimento
+                                          </button>
+                                          <button
+                                            className="dropdown-item"
+                                            onClick={() => handleStatusUpdate(atendimento.id, 'Cancelado')}
+                                            disabled={updatingId === atendimento.id}
+                                          >
+                                            <CircleX size={16} /> Cancelar atendimento
+                                          </button>
+                                        </>
+                                      )}
                                       <div style={{ borderTop: '1px solid var(--border-subtle)', margin: '4px 0' }}></div>
                                       <button
                                         className="dropdown-item danger"

@@ -1,21 +1,65 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, X, Clock, Calendar as CalendarIcon, UserPlus, PlayCircle } from 'lucide-react';
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, parseISO, isBefore, addMinutes } from 'date-fns';
+import { CalendarDays, CalendarRange, ChevronLeft, ChevronRight, Columns3, List, Plus } from 'lucide-react';
+import {
+  addDays, addMinutes, addMonths, addWeeks, endOfMonth, endOfWeek, format, isBefore, isSameDay, isSameMonth,
+  parseISO, startOfMonth, startOfWeek,
+} from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAuth } from '../../application/contexts/AuthContext';
 import ApiClient from '../../infrastructure/api/apiClient';
 import type { Agendamento, Patient, Profissional, NovoAgendamento } from '../../domain/models/types';
 import toast from 'react-hot-toast';
+import { MiniCalendar } from '../components/agenda/MiniCalendar';
+import { DayTimeline, type TimelineColumn } from '../components/agenda/DayTimeline';
+import { AppointmentDetailPanel, NewAppointmentPanel, type NewAppointmentForm } from '../components/agenda/AppointmentPanels';
+import { AppointmentList } from '../components/agenda/AppointmentList';
+import { MonthCalendar } from '../components/agenda/MonthCalendar';
+import {
+  STATUS_META, STATUS_ORDER, SLOT_MIN,
+  appointmentSpan, dayRange, fromHHmm, minutesOfDay, statusKey, toHHmm,
+} from '../components/agenda/agendaUtils';
 import './Schedule.css';
+
+type Panel = { mode: 'create' } | { mode: 'detail'; id: string } | null;
+type View = 'grade' | 'lista' | 'calendario';
+
+const VIEWS: { id: View; label: string; shortcut: string; Icon: typeof List }[] = [
+  { id: 'grade', label: 'Grade', shortcut: 'G', Icon: Columns3 },
+  { id: 'lista', label: 'Lista', shortcut: 'L', Icon: List },
+  { id: 'calendario', label: 'Calendário', shortcut: 'C', Icon: CalendarRange },
+];
+
+const STEP_LABELS: Record<View, [string, string]> = {
+  grade: ['Dia anterior', 'Próximo dia'],
+  lista: ['Semana anterior', 'Próxima semana'],
+  calendario: ['Mês anterior', 'Próximo mês'],
+};
+
+const VIEW_STORAGE_KEY = 'agenda-view';
+
+const readStoredView = (): View => {
+  try {
+    const stored = localStorage.getItem(VIEW_STORAGE_KEY);
+    if (stored === 'grade' || stored === 'lista' || stored === 'calendario') return stored;
+  } catch { /* storage unavailable: fall back to the grid */ }
+  return 'grade';
+};
+
+const countLabel = (n: number) => (n === 0 ? 'Nenhuma consulta' : n === 1 ? '1 consulta' : `${n} consultas`);
+
+const errorMessage = (err: unknown, fallback = 'Algo deu errado. Tente novamente.') =>
+  err instanceof Error && err.message ? err.message : fallback;
+
+const EMPTY_FORM: NewAppointmentForm = { pacienteId: '', profissionalId: '', time: '', duration: 30, observacao: '' };
 
 export function Schedule() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState('');
+  const [visibleMonth, setVisibleMonth] = useState(new Date());
+  const [now, setNow] = useState(new Date());
 
   // Data State
   const [appointments, setAppointments] = useState<Agendamento[]>([]);
@@ -23,557 +67,558 @@ export function Schedule() {
   const [professionals, setProfessionals] = useState<Profissional[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterProfessionalId, setFilterProfessionalId] = useState<string>('all');
+  const [showCancelled, setShowCancelled] = useState(false);
+  const [showCalendarMobile, setShowCalendarMobile] = useState(false);
+  const [view, setView] = useState<View>(readStoredView);
 
-  // Form State
-  const [selectedPatientId, setSelectedPatientId] = useState('');
-  const [selectedProfissionalId, setSelectedProfissionalId] = useState('');
-  const [observacao, setObservacao] = useState('');
-  const [duration, setDuration] = useState('30');
+  // Panel State
+  const [panel, setPanel] = useState<Panel>(null);
+  const [form, setForm] = useState<NewAppointmentForm>(EMPTY_FORM);
+  const [detail, setDetail] = useState<Agendamento | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [selectedAgendamento, setSelectedAgendamento] = useState<Agendamento | null>(null);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [isRescheduling, setIsRescheduling] = useState(false);
-  const [newRescheduleDate, setNewRescheduleDate] = useState('');
-  const [newRescheduleTime, setNewRescheduleTime] = useState('');
+  const [busyId, setBusyId] = useState<string | null>(null);
 
-  const fetchData = async () => {
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
     if (!user?.clinica_id) return;
-    try {
-      setLoading(true);
+    Promise.all([
+      ApiClient.get<Patient[]>(`/pacientes/clinica/${user.clinica_id}`),
+      ApiClient.get<Profissional[]>(`/profissionais/clinica/${user.clinica_id}`).catch(() => [] as Profissional[]),
+    ])
+      .then(([pData, profData]) => {
+        setPatients(pData);
+        setProfessionals(profData.length > 0 ? profData : [
+          { id: '08deae4d-edca-4250-8e1f-0d51dd5b2fc2', nome: 'pedro', email: '', cro: '', clinicaId: user.clinica_id }
+        ]);
+      })
+      .catch((err: unknown) => toast.error(errorMessage(err, 'Erro ao carregar pacientes e profissionais.')));
+  }, [user?.clinica_id]);
 
-      const appointmentsUrl = filterProfessionalId === 'all' 
-        ? `/agendamentos/clinica/${user.clinica_id}`
-        : `/agendamentos/profissional/${filterProfessionalId}`;
-
-      const [aData, pData, profData] = await Promise.all([
-        ApiClient.get<Agendamento[]>(appointmentsUrl),
-        ApiClient.get<Patient[]>(`/pacientes/clinica/${user.clinica_id}`),
-        ApiClient.get<Profissional[]>(`/profissionais/clinica/${user.clinica_id}`).catch(() => [] as Profissional[])
-      ]);
-
-      setAppointments(aData);
-      setPatients(pData);
-      setProfessionals(profData.length > 0 ? profData : [
-        { id: '08deae4d-edca-4250-8e1f-0d51dd5b2fc2', nome: 'pedro', email: '', cro: '', clinicaId: user.clinica_id }
-      ]);
-    } catch (err: any) {
-      toast.error(err.message || 'Erro ao carregar dados da agenda.');
-    } finally {
-      setLoading(false);
-    }
+  const [reloadKey, setReloadKey] = useState(0);
+  const fetchAppointments = () => {
+    setLoading(true);
+    setReloadKey(k => k + 1);
   };
 
   useEffect(() => {
-    fetchData();
-  }, [user?.clinica_id, filterProfessionalId]);
+    if (!user?.clinica_id) return;
+    let ignore = false;
+    const url = filterProfessionalId === 'all'
+      ? `/agendamentos/clinica/${user.clinica_id}`
+      : `/agendamentos/profissional/${filterProfessionalId}`;
+    ApiClient.get<Agendamento[]>(url)
+      .then(data => { if (!ignore) setAppointments(data); })
+      .catch((err: unknown) => toast.error(errorMessage(err, 'Erro ao carregar a agenda.')))
+      .finally(() => { if (!ignore) setLoading(false); });
+    return () => { ignore = true; };
+  }, [user?.clinica_id, filterProfessionalId, reloadKey]);
 
-  const handleCreateAgendamento = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedPatientId || !selectedProfissionalId || !selectedTimeSlot) {
-      toast.error('Preencha os campos obrigatórios.');
+  // Derived data
+  const dayKey = format(selectedDate, 'yyyy-MM-dd');
+
+  const dayAppointments = useMemo(
+    () => appointments.filter(a => isSameDay(parseISO(a.dataHoraInicio), selectedDate)),
+    [appointments, selectedDate],
+  );
+
+  const visibleAppointments = useMemo(
+    () => showCancelled ? dayAppointments : dayAppointments.filter(a => statusKey(a.status) !== 'cancelado'),
+    [dayAppointments, showCancelled],
+  );
+
+  const monthCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const a of appointments) {
+      if (statusKey(a.status) === 'cancelado') continue;
+      const key = a.dataHoraInicio.slice(0, 10);
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    return counts;
+  }, [appointments]);
+
+  // Period covered by the current view: one day, its week, or its month.
+  const range = useMemo(() => {
+    if (view === 'lista') return { start: startOfWeek(selectedDate, { locale: ptBR }), end: endOfWeek(selectedDate, { locale: ptBR }) };
+    if (view === 'calendario') return { start: startOfMonth(selectedDate), end: endOfMonth(selectedDate) };
+    return { start: selectedDate, end: selectedDate };
+  }, [view, selectedDate]);
+
+  const rangeStartKey = format(range.start, 'yyyy-MM-dd');
+  const rangeEndKey = format(range.end, 'yyyy-MM-dd');
+  const todayKey = format(now, 'yyyy-MM-dd');
+  const rangeHasToday = todayKey >= rangeStartKey && todayKey <= rangeEndKey;
+
+  const rangeAppointments = useMemo(
+    () => appointments.filter(a => {
+      const key = a.dataHoraInicio.slice(0, 10);
+      return key >= rangeStartKey && key <= rangeEndKey;
+    }),
+    [appointments, rangeStartKey, rangeEndKey],
+  );
+
+  const shownAppointments = useMemo(
+    () => showCancelled ? appointments : appointments.filter(a => statusKey(a.status) !== 'cancelado'),
+    [appointments, showCancelled],
+  );
+
+  const weekDays = useMemo(
+    () => Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(selectedDate, { locale: ptBR }), i)),
+    [selectedDate],
+  );
+
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const a of rangeAppointments) {
+      const key = statusKey(a.status);
+      counts[key] = (counts[key] ?? 0) + 1;
+    }
+    return counts;
+  }, [rangeAppointments]);
+
+  const columns: TimelineColumn[] = useMemo(() => {
+    if (filterProfessionalId !== 'all') {
+      const prof = professionals.find(p => p.id === filterProfessionalId);
+      return [{ id: filterProfessionalId, nome: prof?.nome ?? 'Profissional' }];
+    }
+    const cols: TimelineColumn[] = professionals.map(p => ({ id: p.id, nome: p.nome }));
+    for (const a of visibleAppointments) {
+      if (!cols.some(c => c.id === a.profissionalId)) cols.push({ id: a.profissionalId, nome: a.nomeProfissional });
+    }
+    return cols.length ? cols : [{ id: '', nome: 'Agenda' }];
+  }, [filterProfessionalId, professionals, visibleAppointments]);
+
+  const { startMin, endMin } = useMemo(() => dayRange(visibleAppointments), [visibleAppointments]);
+
+  const isToday = isSameDay(selectedDate, now);
+  const nextUp = rangeHasToday
+    ? appointments
+      .filter(a => a.dataHoraInicio.slice(0, 10) === todayKey)
+      .filter(a => ['agendado', 'confirmado'].includes(statusKey(a.status)) && appointmentSpan(a).endMin > minutesOfDay(now))
+      .sort((a, b) => a.dataHoraInicio.localeCompare(b.dataHoraInicio))[0]
+    : undefined;
+
+  const findConflict = useCallback((profissionalId: string, date: string, start: number, duration: number, ignoreId?: string) => {
+    return appointments.find(a => {
+      if (a.id === ignoreId || a.profissionalId !== profissionalId) return false;
+      if (a.dataHoraInicio.slice(0, 10) !== date) return false;
+      const key = statusKey(a.status);
+      if (key === 'cancelado' || key === 'falta') return false;
+      const span = appointmentSpan(a);
+      return span.startMin < start + duration && start < span.endMin;
+    }) ?? null;
+  }, [appointments]);
+
+  // Navigation
+  const goToDate = (date: Date) => {
+    setSelectedDate(date);
+    if (!isSameMonth(date, visibleMonth)) setVisibleMonth(date);
+    setShowCalendarMobile(false);
+  };
+
+  /** Moves one unit of the current view: a day, a week or a month. */
+  const step = (dir: 1 | -1) => {
+    goToDate(view === 'lista' ? addWeeks(selectedDate, dir) : view === 'calendario' ? addMonths(selectedDate, dir) : addDays(selectedDate, dir));
+  };
+
+  const changeView = (next: View) => {
+    setView(next);
+    try { localStorage.setItem(VIEW_STORAGE_KEY, next); } catch { /* storage unavailable */ }
+  };
+
+  const openDayInGrid = (date: Date) => {
+    goToDate(date);
+    changeView('grade');
+  };
+
+  const closePanel = () => {
+    setPanel(null);
+    setDetail(null);
+  };
+
+  // Keyboard: ← → move one period, T jumps to today, G/L/C switch views, Esc closes the panel.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && panel) { closePanel(); return; }
+      const target = e.target as HTMLElement;
+      if (panel || e.metaKey || e.ctrlKey || e.altKey || target.closest('input, textarea, select, [contenteditable]')) return;
+      const key = e.key.toLowerCase();
+      if (e.key === 'ArrowLeft') step(-1);
+      if (e.key === 'ArrowRight') step(1);
+      if (key === 't') goToDate(new Date());
+      const shortcut = VIEWS.find(v => v.shortcut.toLowerCase() === key);
+      if (shortcut) changeView(shortcut.id);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
+
+  // Flows
+  const openCreate = ({ profissionalId, time, pacienteId, date }: { profissionalId?: string; time?: string; pacienteId?: string; date?: Date } = {}) => {
+    if (date) goToDate(date);
+    const fallbackTime = () => {
+      if (!isSameDay(date ?? selectedDate, now)) return '08:00';
+      const next = Math.ceil((minutesOfDay(now) + 1) / SLOT_MIN) * SLOT_MIN;
+      return toHHmm(Math.min(next, 21 * 60 + 45));
+    };
+    setForm(prev => ({
+      ...(panel?.mode === 'create' ? prev : EMPTY_FORM),
+      ...(pacienteId ? { pacienteId } : {}),
+      profissionalId: profissionalId || (filterProfessionalId !== 'all' ? filterProfessionalId : (panel?.mode === 'create' ? prev.profissionalId : '')),
+      time: time ?? fallbackTime(),
+    }));
+    setDetail(null);
+    setPanel({ mode: 'create' });
+  };
+
+  const openDetail = async (id: string) => {
+    const local = appointments.find(a => a.id === id) ?? null;
+    setDetail(local);
+    setPanel({ mode: 'detail', id });
+    try {
+      const data = await ApiClient.get<Agendamento>(`/agendamentos/${id}`);
+      setDetail(current => (current && current.id !== id ? current : data));
+    } catch (err: unknown) {
+      toast.error(errorMessage(err));
+      if (!local) closePanel();
+    }
+  };
+
+  const handleCreate = async () => {
+    if (!form.pacienteId || !form.profissionalId || !form.time) {
+      toast.error('Escolha o paciente, o profissional e o horário.');
       return;
     }
 
-    const appointmentDate = new Date(selectedDate);
-    const [hours, minutes] = selectedTimeSlot.split(':').map(Number);
-    appointmentDate.setHours(hours, minutes, 0, 0);
-
-    if (isBefore(appointmentDate, new Date())) {
-      toast.error('Não é possível agendar para datas ou horários passados.');
+    const start = parseISO(`${dayKey}T${form.time}:00`);
+    if (isBefore(start, new Date())) {
+      toast.error('Esse horário já passou. Escolha outro horário.');
       return;
     }
 
     try {
       setIsSaving(true);
-      const dataHoraInicio = format(appointmentDate, "yyyy-MM-dd'T'HH:mm:ss");
-      const dataHoraFim = format(addMinutes(appointmentDate, parseInt(duration)), "yyyy-MM-dd'T'HH:mm:ss");
-
       const payload: NovoAgendamento = {
-        pacienteId: selectedPatientId,
-        profissionalId: selectedProfissionalId,
-        dataHoraInicio,
-        dataHoraFim,
-        observacao
+        pacienteId: form.pacienteId,
+        profissionalId: form.profissionalId,
+        dataHoraInicio: format(start, "yyyy-MM-dd'T'HH:mm:ss"),
+        dataHoraFim: format(addMinutes(start, form.duration), "yyyy-MM-dd'T'HH:mm:ss"),
+        observacao: form.observacao,
       };
-
       await ApiClient.post('/agendamentos', payload);
-
-      toast.success('Agendamento realizado com sucesso!');
-      setIsModalOpen(false);
-      fetchData();
-
-      setSelectedPatientId('');
-      setSelectedProfissionalId('');
-      setObservacao('');
-    } catch (err: any) {
-      toast.error(err.message || 'Erro ao realizar agendamento.');
+      toast.success(`Consulta agendada para ${format(start, "dd/MM 'às' HH:mm")}.`);
+      setForm(EMPTY_FORM);
+      closePanel();
+      fetchAppointments();
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, 'Não foi possível agendar a consulta.'));
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleUpdateStatus = async (id: string, action: 'confirmar' | 'cancelar' | 'falta') => {
+  const handleUpdateStatus = async (app: Agendamento, action: 'confirmar' | 'cancelar' | 'falta') => {
+    const messages = {
+      confirmar: `Presença de ${app.nomePaciente} confirmada.`,
+      cancelar: 'Consulta cancelada.',
+      falta: 'Falta registrada.',
+    };
+    const statuses = { confirmar: 'Confirmado', cancelar: 'Cancelado', falta: 'Falta' };
     try {
-      await ApiClient.patch(`/agendamentos/${id}/${action}`);
-
-      toast.success(`Agendamento ${action === 'confirmar' ? 'confirmado' : action === 'cancelar' ? 'cancelado' : 'marcado como falta'}!`);
-
-      // Update local state for immediate feedback if in detail modal
-      if (selectedAgendamento && selectedAgendamento.id === id) {
-        const statusMap: any = { confirmar: 'Confirmado', cancelar: 'Cancelado', falta: 'Falta' };
-        setSelectedAgendamento({ ...selectedAgendamento, status: statusMap[action] });
-      }
-
-      fetchData();
-    } catch (err: any) {
-      toast.error(err.message);
+      setIsSaving(true);
+      setBusyId(app.id);
+      await ApiClient.patch(`/agendamentos/${app.id}/${action}`);
+      toast.success(messages[action]);
+      setDetail(current => (current && current.id === app.id ? { ...current, status: statuses[action] } : current));
+      fetchAppointments();
+    } catch (err: unknown) {
+      toast.error(errorMessage(err));
+    } finally {
+      setIsSaving(false);
+      setBusyId(null);
     }
   };
 
-  const handleGerarAtendimento = async () => {
-    if (!selectedAgendamento) return;
-
+  const handleStartAtendimento = async () => {
+    if (!detail) return;
     try {
       setIsSaving(true);
       const now = new Date();
-      const appointmentDate = parseISO(selectedAgendamento.dataHoraInicio);
-
-      const payload: any = {
-        descricao: `Atendimento gerado a partir do agendamento. Obs: ${selectedAgendamento.observacao || 'Nenhuma'}`,
+      const payload: { descricao: string; dente: null; tipoAtendimento: number; dataAtendimento?: string } = {
+        descricao: `Atendimento gerado a partir do agendamento. Obs: ${detail.observacao || 'Nenhuma'}`,
         dente: null,
         tipoAtendimento: 1 // Consulta
       };
 
       // Se a data/hora atual for posterior à do agendamento, envia a atual
-      if (isBefore(appointmentDate, now)) {
+      if (isBefore(parseISO(detail.dataHoraInicio), now)) {
         payload.dataAtendimento = format(now, "yyyy-MM-dd'T'HH:mm:ss");
       }
 
-      await ApiClient.post(`/atendimentos/agendamento/${selectedAgendamento.id}`, payload);
-
-      toast.success('Atendimento gerado com sucesso! Redirecionando para o prontuário...');
-      setIsDetailModalOpen(false);
-
-      // Navigate to patient's records
-      navigate(`/prontuarios/${selectedAgendamento.pacienteId}`);
-    } catch (err: any) {
-      toast.error(err.message);
+      await ApiClient.post(`/atendimentos/agendamento/${detail.id}`, payload);
+      toast.success('Atendimento iniciado. Abrindo o prontuário…');
+      navigate(`/prontuarios/${detail.pacienteId}`);
+    } catch (err: unknown) {
+      toast.error(errorMessage(err));
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleReschedule = async () => {
-    if (!selectedAgendamento || !newRescheduleDate || !newRescheduleTime) {
-      toast.error('Informe a nova data e horário.');
+  const handleReschedule = async (date: string, time: string) => {
+    if (!detail) return;
+    const start = parseISO(`${date}T${time}:00`);
+    if (isBefore(start, new Date())) {
+      toast.error('Esse horário já passou. Escolha outro horário.');
       return;
     }
-
     try {
-      const start = new Date(`${newRescheduleDate}T${newRescheduleTime}`);
-      const end = addMinutes(start, selectedAgendamento.duracaoMinutos);
-
-      await ApiClient.patch(`/agendamentos/${selectedAgendamento.id}/reagendar`, {
+      setIsSaving(true);
+      const duration = appointmentSpan(detail).duration;
+      await ApiClient.patch(`/agendamentos/${detail.id}/reagendar`, {
         dataHoraInicio: format(start, "yyyy-MM-dd'T'HH:mm:ss"),
-        dataHoraFim: format(end, "yyyy-MM-dd'T'HH:mm:ss")
+        dataHoraFim: format(addMinutes(start, duration), "yyyy-MM-dd'T'HH:mm:ss")
       });
-
-      toast.success('Reagendamento concluído!');
-      setIsDetailModalOpen(false);
-      setIsRescheduling(false);
-      fetchData();
-    } catch (err: any) {
-      toast.error(err.message);
+      toast.success(`Consulta reagendada para ${format(start, "dd/MM 'às' HH:mm")}.`);
+      closePanel();
+      goToDate(start);
+      fetchAppointments();
+    } catch (err: unknown) {
+      toast.error(errorMessage(err));
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const openDetailModal = async (id: string) => {
-    try {
-      const data = await ApiClient.get<Agendamento>(`/agendamentos/${id}`);
-      setSelectedAgendamento(data);
-      setIsDetailModalOpen(true);
-      setNewRescheduleDate(format(parseISO(data.dataHoraInicio), 'yyyy-MM-dd'));
-      setNewRescheduleTime(format(parseISO(data.dataHoraInicio), 'HH:mm'));
-    } catch (err: any) {
-      toast.error(err.message);
+  const draft = panel?.mode === 'create' && form.time
+    ? { profissionalId: form.profissionalId, startMin: fromHHmm(form.time), duration: form.duration }
+    : null;
+
+  const summaryTotal = rangeAppointments.length - (statusCounts.cancelado ?? 0);
+  const periodWord = view === 'lista' ? 'nesta semana' : view === 'calendario' ? 'no mês' : isToday ? 'hoje' : 'neste dia';
+  const stepIsCurrent = view === 'grade' ? isToday : rangeHasToday;
+
+  const title = (() => {
+    if (view === 'grade') {
+      return {
+        day: format(selectedDate, 'd'),
+        main: format(selectedDate, "MMMM 'de' yyyy", { locale: ptBR }),
+        sub: `${isToday ? 'Hoje, ' : ''}${format(selectedDate, 'EEEE', { locale: ptBR })}`,
+      };
     }
-  };
-
-  // Calendar Engine
-  const renderHeader = () => (
-    <div className="calendar-header flex-col" style={{ gap: '16px', alignItems: 'stretch' }}>
-      <div className="flex-row justify-between items-center w-full">
-        <h2 style={{ textTransform: 'capitalize', margin: 0 }}>
-          {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
-        </h2>
-        
-        <div className="flex-row gap-2 mobile-hide">
-          <button className="btn btn-secondary" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
-            <ChevronLeft size={20} />
-          </button>
-          <button className="btn btn-secondary" onClick={() => setCurrentMonth(new Date())}>
-            Hoje
-          </button>
-          <button className="btn btn-secondary" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
-            <ChevronRight size={20} />
-          </button>
-        </div>
-      </div>
-      
-      <div className="flex-row gap-3 w-full">
-        <select 
-          className="input-field" 
-          style={{ flex: 1, height: '42px', fontSize: '0.9rem', minWidth: '0' }}
-          value={filterProfessionalId}
-          onChange={(e) => setFilterProfessionalId(e.target.value)}
-        >
-          <option value="all">Todos os Profissionais</option>
-          {professionals.map(p => (
-            <option key={p.id} value={p.id}>{p.nome}</option>
-          ))}
-        </select>
-        
-        <div className="flex-row gap-2 mobile-only">
-          <button className="btn btn-secondary" style={{ padding: '8px' }} onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
-            <ChevronLeft size={18} />
-          </button>
-          <button className="btn btn-secondary" style={{ padding: '8px' }} onClick={() => setCurrentMonth(new Date())}>
-            Hoje
-          </button>
-          <button className="btn btn-secondary" style={{ padding: '8px' }} onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
-            <ChevronRight size={18} />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderDays = () => {
-    const days = [];
-    const startDate = startOfWeek(currentMonth, { locale: ptBR });
-    for (let i = 0; i < 7; i++) {
-      days.push(
-        <div className="calendar-day-header" key={i}>
-          {format(addDays(startDate, i), "EEE", { locale: ptBR })}
-        </div>
-      );
+    if (view === 'lista') {
+      const { start, end } = range;
+      const main = isSameMonth(start, end)
+        ? `${format(start, 'd')} a ${format(end, "d 'de' MMMM", { locale: ptBR })}`
+        : `${format(start, "d 'de' MMM", { locale: ptBR })} a ${format(end, "d 'de' MMM", { locale: ptBR })}`;
+      return { day: null, main, sub: rangeHasToday ? 'Esta semana' : format(end, 'yyyy') };
     }
-    return <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>{days}</div>;
-  };
-
-  const renderCells = () => {
-    const monthStart = startOfMonth(currentMonth);
-    const monthEnd = endOfMonth(monthStart);
-    const startDate = startOfWeek(monthStart, { locale: ptBR });
-    const endDate = endOfWeek(monthEnd, { locale: ptBR });
-
-    const rows = [];
-    let days = [];
-    let day = startDate;
-
-    while (day <= endDate) {
-      for (let i = 0; i < 7; i++) {
-        const cloneDay = day;
-        const dayApps = appointments.filter(app => isSameDay(parseISO(app.dataHoraInicio), cloneDay));
-
-        days.push(
-          <div
-            className={`calendar-cell ${!isSameMonth(day, monthStart) ? "inactive" : ""} ${isSameDay(day, selectedDate) ? "selected" : ""}`}
-            key={day.toISOString()}
-            onClick={() => setSelectedDate(cloneDay)}
-          >
-            <div className="calendar-date">{format(day, "d")}</div>
-            {dayApps.slice(0, 2).map(a => (
-              <div
-                key={a.id}
-                className={`calendar-event-indicator status-${a.status.toLowerCase()}`}
-                title={a.nomePaciente}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  openDetailModal(a.id);
-                }}
-              >
-                {format(parseISO(a.dataHoraInicio), 'HH:mm')} - {a.nomePaciente.split(' ')[0]}
-              </div>
-            ))}
-            {dayApps.length > 2 && <div className="calendar-event-more">+{dayApps.length - 2} mais</div>}
-          </div>
-        );
-        day = addDays(day, 1);
-      }
-      rows.push(<div className="calendar-grid" key={day.toISOString()}>{days}</div>);
-      days = [];
-    }
-    return <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>{rows}</div>;
-  };
-
-  const dailyAppointments = appointments.filter(app => isSameDay(parseISO(app.dataHoraInicio), selectedDate));
-
-  const timeSlots = Array.from({ length: 11 }, (_, i) => {
-    const hour = i + 8;
-    return `${hour.toString().padStart(2, '0')}:00`;
-  });
-
-  const handleOpenSchedule = (time: string) => {
-    const checkDate = new Date(selectedDate);
-    const [h, m] = time.split(':').map(Number);
-    checkDate.setHours(h, m, 0, 0);
-
-    if (isBefore(checkDate, new Date())) {
-      toast.error('Não é possível agendar horários no passado.');
-      return;
-    }
-
-    setSelectedTimeSlot(time);
-    if (filterProfessionalId !== 'all') {
-      setSelectedProfissionalId(filterProfessionalId);
-    }
-    setIsModalOpen(true);
-  };
+    return {
+      day: null,
+      main: format(selectedDate, "MMMM 'de' yyyy", { locale: ptBR }),
+      sub: `${countLabel(summaryTotal)} no mês`,
+    };
+  })();
 
   return (
-    <div className="animate-fade-in" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '2rem', marginBottom: '8px' }}>Agenda</h1>
-        <p style={{ color: 'var(--text-muted)' }}>Gerencie horários e disponibilidade</p>
+    <div className={`ag-page animate-fade-in view-${view} ${panel ? 'has-panel' : ''}`}>
+      <header className="ag-header">
+        <div className="ag-header-date">
+          <h1 className={`ag-title ${title.day ? '' : 'is-range'}`}>
+            {title.day && <span className="ag-title-day">{title.day}</span>}
+            <span className="ag-title-rest">
+              <span className="ag-title-month">{title.main}</span>
+              <span className="ag-title-weekday">{title.sub}</span>
+            </span>
+          </h1>
+          <div className="ag-daynav" role="group" aria-label="Navegar pela agenda">
+            <button type="button" className="ag-icon-btn is-bordered" onClick={() => step(-1)} aria-label={STEP_LABELS[view][0]} title={`${STEP_LABELS[view][0]} (←)`}>
+              <ChevronLeft size={18} />
+            </button>
+            <button type="button" className="btn btn-secondary ag-today" onClick={() => goToDate(new Date())} disabled={stepIsCurrent} title="Ir para hoje (T)">
+              Hoje
+            </button>
+            <button type="button" className="ag-icon-btn is-bordered" onClick={() => step(1)} aria-label={STEP_LABELS[view][1]} title={`${STEP_LABELS[view][1]} (→)`}>
+              <ChevronRight size={18} />
+            </button>
+            <button
+              type="button"
+              className="ag-icon-btn is-bordered ag-mobile-only ag-side-toggle"
+              onClick={() => setShowCalendarMobile(v => !v)}
+              aria-expanded={showCalendarMobile}
+              aria-label="Escolher data no calendário"
+            >
+              <CalendarDays size={18} />
+            </button>
+          </div>
+        </div>
+
+        <div className="ag-header-actions">
+          <div className="ag-views" role="radiogroup" aria-label="Modo de visualização">
+            {VIEWS.map(({ id, label, shortcut, Icon }) => (
+              <button
+                key={id}
+                type="button"
+                role="radio"
+                aria-checked={view === id}
+                className={view === id ? 'is-on' : ''}
+                onClick={() => changeView(id)}
+                title={`${label} (${shortcut})`}
+              >
+                <Icon size={16} aria-hidden="true" />
+                <span>{label}</span>
+              </button>
+            ))}
+          </div>
+          <label className="ag-sr-only" htmlFor="ag-filter">Profissional</label>
+          <select
+            id="ag-filter"
+            className="input-field ag-filter"
+            value={filterProfessionalId}
+            onChange={e => { setLoading(true); setFilterProfessionalId(e.target.value); }}
+          >
+            <option value="all">Todos os profissionais</option>
+            {professionals.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
+          </select>
+          <button type="button" className="btn btn-primary ag-new" onClick={() => openCreate()} title="Novo Agendamento">
+            <Plus size={18} /> Novo Agendamento
+          </button>
+        </div>
+      </header>
+
+      <div className="ag-body">
+        <aside className={`ag-side ${showCalendarMobile ? 'is-open' : ''}`}>
+          <MiniCalendar
+            month={visibleMonth}
+            selected={selectedDate}
+            today={now}
+            counts={monthCounts}
+            onMonthChange={setVisibleMonth}
+            onSelect={goToDate}
+          />
+
+          <section className="ag-summary" aria-label={view === 'lista' ? 'Resumo da semana' : 'Resumo do dia'}>
+            {nextUp && (
+              <button type="button" className="ag-next" onClick={() => openDetail(nextUp.id)}>
+                <span className="ag-next-label">Próximo paciente</span>
+                <span className="ag-next-name">{nextUp.nomePaciente}</span>
+                <span className="ag-next-time">{format(parseISO(nextUp.dataHoraInicio), 'HH:mm')} com {nextUp.nomeProfissional}</span>
+              </button>
+            )}
+
+            <h2 className="ag-summary-title">
+              {countLabel(summaryTotal)}
+              <span> {periodWord}</span>
+            </h2>
+
+            {rangeAppointments.length === 0 ? (
+              <p className="ag-hint">
+                {view === 'grade' ? 'Clique em um horário livre na grade para agendar.' : 'Use o + ao lado de um dia para agendar.'}
+              </p>
+            ) : (
+              <ul className="ag-legend">
+                {STATUS_ORDER.map(key => (
+                  <li key={key} className={!statusCounts[key] ? 'is-zero' : ''}>
+                    <i className={`ag-swatch st-${key}`} aria-hidden="true" />
+                    <span>{STATUS_META[key].plural}</span>
+                    <strong>{statusCounts[key] ?? 0}</strong>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <label className="ag-toggle">
+              <input type="checkbox" checked={showCancelled} onChange={e => setShowCancelled(e.target.checked)} />
+              <span>Mostrar consultas canceladas</span>
+            </label>
+          </section>
+        </aside>
+
+        <main className="ag-main" aria-label={`Agenda: ${title.main}`}>
+          {view === 'grade' && (
+            <DayTimeline
+              date={selectedDate}
+              now={now}
+              columns={columns}
+              appointments={visibleAppointments}
+              startMin={startMin}
+              endMin={endMin}
+              loading={loading}
+              activeId={panel?.mode === 'detail' ? panel.id : null}
+              draft={draft}
+              onSlotClick={(profissionalId, time) => openCreate({ profissionalId, time })}
+              onAppointmentClick={openDetail}
+            />
+          )}
+          {view === 'lista' && (
+            <AppointmentList
+              days={weekDays}
+              now={now}
+              appointments={shownAppointments}
+              loading={loading}
+              activeId={panel?.mode === 'detail' ? panel.id : null}
+              busyId={busyId}
+              onOpen={openDetail}
+              onConfirm={app => handleUpdateStatus(app, 'confirmar')}
+              onCreate={date => openCreate({ date })}
+            />
+          )}
+          {view === 'calendario' && (
+            <MonthCalendar
+              month={selectedDate}
+              selected={selectedDate}
+              now={now}
+              appointments={shownAppointments}
+              loading={loading}
+              activeId={panel?.mode === 'detail' ? panel.id : null}
+              onOpenDay={openDayInGrid}
+              onOpen={openDetail}
+              onCreate={date => openCreate({ date })}
+            />
+          )}
+        </main>
+
+        {panel && <div className="ag-scrim" onClick={closePanel} aria-hidden="true" />}
+        {panel && (
+          <aside className="ag-panel" aria-label={panel.mode === 'create' ? 'Novo Agendamento' : 'Detalhes da consulta'}>
+            {panel.mode === 'create' && (
+              <NewAppointmentPanel
+                date={selectedDate}
+                now={now}
+                form={form}
+                patients={patients}
+                professionals={professionals}
+                saving={isSaving}
+                findConflict={findConflict}
+                onDateChange={goToDate}
+                onChange={patch => setForm(prev => ({ ...prev, ...patch }))}
+                onSubmit={handleCreate}
+                onClose={closePanel}
+              />
+            )}
+            {panel.mode === 'detail' && detail && (
+              <AppointmentDetailPanel
+                key={detail.id}
+                appointment={detail}
+                now={now}
+                busy={isSaving}
+                findConflict={findConflict}
+                onConfirm={() => handleUpdateStatus(detail, 'confirmar')}
+                onStart={handleStartAtendimento}
+                onNoShow={() => handleUpdateStatus(detail, 'falta')}
+                onCancel={() => handleUpdateStatus(detail, 'cancelar')}
+                onReschedule={handleReschedule}
+                onBookAgain={() => openCreate({ profissionalId: detail.profissionalId, pacienteId: detail.pacienteId })}
+                onOpenRecord={() => navigate(`/prontuarios/${detail.pacienteId}`)}
+                onClose={closePanel}
+              />
+            )}
+          </aside>
+        )}
       </div>
-
-      <div className="calendar-container">
-        <div className="calendar-main">
-          {renderHeader()}
-          {renderDays()}
-          <div style={{ position: 'relative', flex: 1, minHeight: '400px' }}>
-            {loading ? <div className="loading-overlay">Carregando...</div> : renderCells()}
-          </div>
-        </div>
-
-        <div className="day-panel">
-          <div className="day-panel-header">
-            <h3>{format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}</h3>
-            <p>{format(selectedDate, "EEEE", { locale: ptBR })}</p>
-          </div>
-
-          <div className="day-timeline">
-            {timeSlots.map(time => {
-              const appsAtTime = dailyAppointments.filter(a => format(parseISO(a.dataHoraInicio), 'HH:mm') === time);
-
-              return (
-                <div key={time} className="time-slot" style={{ minHeight: appsAtTime.length > 1 ? 'auto' : '80px' }}>
-                  <div className="time-label">{time}</div>
-                  <div className="time-content-container" style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
-                    {appsAtTime.length > 0 ? (
-                      appsAtTime.map(app => (
-                        <div
-                          key={app.id}
-                          className={`time-content occupied status-card-${app.status.toLowerCase()}`}
-                          title={app.nomePaciente}
-                          style={{ height: 'auto', padding: '12px', width: '100%' }}
-                          onClick={() => openDetailModal(app.id)}
-                        >
-                          <div className="flex-col gap-1 w-full">
-                            <div className="flex-row justify-between items-start w-full">
-                              <div style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '0.95rem' }}>{app.nomePaciente}</div>
-                              <span className={`status-badge ${app.status.toLowerCase()}`}>{app.status}</span>
-                            </div>
-                            <div className="flex-col gap-0" style={{ marginTop: '4px' }}>
-                              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Prof. {app.nomeProfissional}</p>
-                              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{app.duracaoMinutos} minutos de duração</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="time-content free" onClick={() => handleOpenSchedule(time)} style={{ width: '100%' }}>
-                        <span><UserPlus size={14} /> Horário Livre</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* New Event Modal */}
-      {isModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Agendar Paciente</h3>
-              <button className="action-btn" onClick={() => setIsModalOpen(false)}><X size={20} /></button>
-            </div>
-
-            <form onSubmit={handleCreateAgendamento} className="flex-col gap-4">
-              <div className="flex-row gap-4" style={{ padding: '16px', background: 'var(--bg-main)', borderRadius: '12px' }}>
-                <div style={{ flex: 1 }}>
-                  <span className="input-label"><CalendarIcon size={14} /> Data</span>
-                  <div style={{ fontWeight: 600 }}>{format(selectedDate, "dd/MM/yyyy")}</div>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <span className="input-label"><Clock size={14} /> Horário</span>
-                  <div style={{ fontWeight: 600 }}>{selectedTimeSlot}</div>
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="input-label">Paciente</label>
-                <select className="input-field" value={selectedPatientId} onChange={e => setSelectedPatientId(e.target.value)} required>
-                  <option value="">Selecione o paciente...</option>
-                  {patients.map(p => (<option key={p.id} value={p.id}>{p.nome}</option>))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label className="input-label">Profissional</label>
-                <select className="input-field" value={selectedProfissionalId} onChange={e => setSelectedProfissionalId(e.target.value)} required>
-                  <option value="">Selecione o dentista...</option>
-                  {professionals.map(p => (<option key={p.id} value={p.id}>{p.nome}</option>))}
-                </select>
-              </div>
-
-              <div className="grid-cols-2">
-                <div className="form-group">
-                  <label className="input-label">Duração</label>
-                  <select className="input-field" value={duration} onChange={e => setDuration(e.target.value)}>
-                    <option value="30">30 minutos</option>
-                    <option value="60">1 hora</option>
-                    <option value="90">1h 30min</option>
-                    <option value="120">2 horas</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label className="input-label">Observação</label>
-                  <input type="text" className="input-field" value={observacao} onChange={e => setObservacao(e.target.value)} placeholder="Ex: Avaliação" maxLength={500} />
-                </div>
-              </div>
-
-              <div className="flex-row gap-3" style={{ marginTop: '16px' }}>
-                <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setIsModalOpen(false)}>Cancelar</button>
-                <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={isSaving}>{isSaving ? 'Salvando...' : 'Confirmar'}</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Detail Modal */}
-      {isDetailModalOpen && selectedAgendamento && (
-        <div className="modal-overlay" onClick={() => { setIsDetailModalOpen(false); setIsRescheduling(false); }}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Detalhes do Agendamento</h3>
-              <button className="action-btn" onClick={() => { setIsDetailModalOpen(false); setIsRescheduling(false); }}><X size={20} /></button>
-            </div>
-
-            <div className="flex-col gap-4">
-              <div className="flex-row items-center gap-4 p-4" style={{ background: 'var(--bg-main)', borderRadius: '12px' }}>
-                <div style={{ width: '50px', height: '50px', background: 'var(--primary)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '1.2rem', fontWeight: 600 }}>
-                  {selectedAgendamento.nomePaciente.charAt(0)}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <h4 style={{ fontSize: '1.1rem', marginBottom: '2px' }}>{selectedAgendamento.nomePaciente}</h4>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                    Status: <span className={`status-badge ${selectedAgendamento.status.toLowerCase()}`}>{selectedAgendamento.status}</span>
-                  </div>
-                </div>
-              </div>
-
-              {!isRescheduling ? (
-                <>
-                  <div className="grid-cols-2 gap-4">
-                    <div className="p-3" style={{ background: 'var(--bg-surface-hover)', borderRadius: '8px' }}>
-                      <span className="input-label">Data e Hora</span>
-                      <p style={{ fontWeight: 600, fontSize: '0.95rem' }}>{format(parseISO(selectedAgendamento.dataHoraInicio), "dd/MM/yyyy 'às' HH:mm")}</p>
-                    </div>
-                    <div className="p-3" style={{ background: 'var(--bg-surface-hover)', borderRadius: '8px' }}>
-                      <span className="input-label">Profissional</span>
-                      <p style={{ fontWeight: 600, fontSize: '0.95rem' }}>{selectedAgendamento.nomeProfissional}</p>
-                    </div>
-                  </div>
-
-                  {selectedAgendamento.observacao && (
-                    <div className="p-3" style={{ background: 'var(--bg-surface-hover)', borderRadius: '8px' }}>
-                      <span className="input-label">Observação</span>
-                      <p style={{ fontSize: '0.9rem' }}>{selectedAgendamento.observacao}</p>
-                    </div>
-                  )}
-
-                  <div className="flex-col gap-3" style={{ marginTop: '16px' }}>
-                    {selectedAgendamento.status !== 'Realizado' && 
-                     selectedAgendamento.status !== 'Concluido' && 
-                     selectedAgendamento.status !== 'Cancelado' && (
-                      <>
-                        <p style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>Gerenciamento do Horário</p>
-
-                        <div className="flex-col gap-2">
-                          {selectedAgendamento.status === 'Confirmado' ? (
-                            <button
-                              className="btn btn-primary"
-                              style={{ padding: '16px', borderRadius: '12px', fontSize: '1rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', width: '100%', boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)', border: 'none', background: 'linear-gradient(135deg, var(--primary), #2563eb)' }}
-                              onClick={handleGerarAtendimento}
-                              disabled={isSaving}
-                            >
-                              <PlayCircle size={22} /> {isSaving ? 'Gerando...' : 'Iniciar Atendimento'}
-                            </button>
-                          ) : selectedAgendamento.status === 'Agendado' ? (
-                            <button
-                              className="btn btn-success"
-                              style={{ padding: '14px', borderRadius: '10px', fontSize: '0.95rem', fontWeight: 600, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)' }}
-                              onClick={() => handleUpdateStatus(selectedAgendamento.id, 'confirmar')}
-                            >
-                              Confirmar Presença
-                            </button>
-                          ) : null}
-
-                          {(selectedAgendamento.status === 'Agendado' || selectedAgendamento.status === 'Confirmado') && (
-                            <div className="grid-cols-2 gap-2" style={{ width: '100%' }}>
-                              <button className="btn btn-warning"
-                                style={{ padding: '12px', borderRadius: '10px', fontWeight: 600, width: '100%', boxShadow: '0 4px 12px rgba(245, 158, 11, 0.1)' }}
-                                onClick={() => handleUpdateStatus(selectedAgendamento.id, 'falta')}>
-                                Marcar Falta
-                              </button>
-                              <button className="btn btn-danger"
-                                style={{ padding: '12px', borderRadius: '10px', fontWeight: 600, width: '100%', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.1)' }}
-                                onClick={() => handleUpdateStatus(selectedAgendamento.id, 'cancelar')}>
-                                Cancelar
-                              </button>
-                            </div>
-                          )}
-                        </div>
-
-                        <button className="btn btn-secondary w-full"
-                          style={{ marginTop: '8px', padding: '12px', borderRadius: '10px', borderStyle: 'dashed', fontWeight: 500 }}
-                          onClick={() => setIsRescheduling(true)}>
-                          Reagendar para outra data
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </>
-              ) : (
-                <div className="flex-col gap-4 animate-fade-in">
-                  <p style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--primary)' }}>Alterar data e horário:</p>
-                  <div className="grid-cols-2 gap-4">
-                    <div className="form-group">
-                      <label className="input-label">Nova Data</label>
-                      <input type="date" className="input-field" value={newRescheduleDate} onChange={e => setNewRescheduleDate(e.target.value)} />
-                    </div>
-                    <div className="form-group">
-                      <label className="input-label">Novo Horário</label>
-                      <input type="time" className="input-field" value={newRescheduleTime} onChange={e => setNewRescheduleTime(e.target.value)} />
-                    </div>
-                  </div>
-                  <div className="flex-row gap-2">
-                    <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setIsRescheduling(false)}>Voltar</button>
-                    <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleReschedule}>Confirmar Reagendamento</button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

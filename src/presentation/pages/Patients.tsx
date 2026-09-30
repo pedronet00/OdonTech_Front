@@ -7,6 +7,7 @@ import type { Patient, FichaAnamnese, Pagamento, NovoPagamento, CondicoesCardiac
 import { FormaPagamentoEnum, StatusPagamentoEnum } from '../../domain/models/types';
 import toast from 'react-hot-toast';
 import { applyCpfMask, applyPhoneMask, applyCepMask } from '../../utils/masks';
+import { confirmAction } from '../../utils/alerts';
 import { API_BASE_URL } from '../../infrastructure/config/api';
 
 const getDeficienciaId = (val: any): number => {
@@ -167,7 +168,14 @@ export function Patients() {
   }, [user?.clinica_id, token]);
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Tem certeza que deseja excluir este paciente?')) return;
+    setActiveDropdown(null);
+    const confirmed = await confirmAction({
+      title: 'Excluir paciente?',
+      text: 'Tem certeza que deseja excluir o cadastro deste paciente?',
+      confirmText: 'Sim, excluir',
+      danger: true,
+    });
+    if (!confirmed) return;
     try {
       await ApiClient.delete(`/pacientes/${id}`);
       setPatients(prev => prev.filter(p => p.id !== id));
@@ -626,7 +634,14 @@ export function Patients() {
   };
 
   const handleCancelPayment = async (paymentId: string) => {
-    if (!window.confirm('Cancelar este pagamento?')) return;
+    const confirmed = await confirmAction({
+      title: 'Cancelar pagamento?',
+      text: 'Tem certeza que deseja cancelar este pagamento?',
+      confirmText: 'Sim, cancelar',
+      cancelText: 'Manter pagamento',
+      danger: true,
+    });
+    if (!confirmed) return;
     try {
       await ApiClient.patch(`/pagamentos/${paymentId}/cancelar`);
       toast.success('Cancelado!');
@@ -637,7 +652,13 @@ export function Patients() {
   };
 
   const handleDeletePayment = async (paymentId: string) => {
-    if (!window.confirm('Excluir permanentemente?')) return;
+    const confirmed = await confirmAction({
+      title: 'Excluir pagamento?',
+      text: 'Tem certeza? O pagamento será apagado permanentemente.',
+      confirmText: 'Sim, excluir',
+      danger: true,
+    });
+    if (!confirmed) return;
     try {
       await ApiClient.delete(`/pagamentos/${paymentId}`);
       toast.success('Excluído!');

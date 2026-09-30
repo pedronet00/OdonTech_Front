@@ -176,7 +176,7 @@ export function EntradasList({ entradas, nomeMes }: EntradasListProps) {
                               type="button"
                               className="entrada-paciente"
                               onClick={() => navigate(`/prontuarios/${e.pacienteId}`)}
-                              title="Abrir prontuário"
+                              title="Prontuário"
                             >
                               {e.nomePaciente}
                             </button>
