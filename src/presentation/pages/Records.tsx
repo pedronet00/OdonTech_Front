@@ -51,7 +51,6 @@ export function Records() {
   const [paymentData, setPaymentData] = useState({
     valor: '',
     dataVencimento: new Date().toISOString().split('T')[0],
-    statusPagamento: StatusPagamentoEnum.Pendente.toString(),
     formaPagamento: FormaPagamentoEnum.PIX.toString(),
     observacao: '',
     atendimentoId: ''
@@ -425,7 +424,6 @@ export function Records() {
     setPaymentData({
       valor: atendimento.valorPendente !== undefined ? atendimento.valorPendente.toString() : '',
       dataVencimento: new Date().toISOString().split('T')[0],
-      statusPagamento: StatusPagamentoEnum.Pendente.toString(),
       formaPagamento: FormaPagamentoEnum.PIX.toString(),
       observacao: `Pagamento referente ao atendimento: ${atendimento.tipoAtendimento} - ${new Date(atendimento.dataAtendimento).toLocaleDateString('pt-BR')}`,
       atendimentoId: atendimento.id
@@ -446,7 +444,7 @@ export function Records() {
         atendimentoId: paymentData.atendimentoId,
         valor: Number(paymentData.valor),
         dataVencimento: paymentData.dataVencimento,
-        statusPagamento: Number(paymentData.statusPagamento),
+        statusPagamento: StatusPagamentoEnum.Pago,
         formaPagamento: Number(paymentData.formaPagamento),
         observacao: paymentData.observacao || null
       };
@@ -1384,32 +1382,18 @@ export function Records() {
                     </div>
                   </div>
 
-                  <div className="grid-cols-2">
-                    <div className="form-group">
-                      <label className="input-label">Forma de Pagamento</label>
-                      <select
-                        className="input-field"
-                        value={paymentData.formaPagamento}
-                        onChange={e => setPaymentData({ ...paymentData, formaPagamento: e.target.value })}
-                      >
-                        <option value={FormaPagamentoEnum.PIX}>PIX</option>
-                        <option value={FormaPagamentoEnum.Debito}>Débito</option>
-                        <option value={FormaPagamentoEnum.Credito}>Crédito</option>
-                        <option value={FormaPagamentoEnum.Dinheiro}>Dinheiro</option>
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label className="input-label">Status de Pagamento</label>
-                      <select
-                        className="input-field"
-                        value={paymentData.statusPagamento}
-                        onChange={e => setPaymentData({ ...paymentData, statusPagamento: e.target.value })}
-                      >
-                        <option value={StatusPagamentoEnum.Pendente}>Pendente</option>
-                        <option value={StatusPagamentoEnum.Pago}>Pago</option>
-                        <option value={StatusPagamentoEnum.Cancelado}>Cancelado</option>
-                      </select>
-                    </div>
+                  <div className="form-group">
+                    <label className="input-label">Forma de Pagamento</label>
+                    <select
+                      className="input-field"
+                      value={paymentData.formaPagamento}
+                      onChange={e => setPaymentData({ ...paymentData, formaPagamento: e.target.value })}
+                    >
+                      <option value={FormaPagamentoEnum.PIX}>PIX</option>
+                      <option value={FormaPagamentoEnum.Debito}>Débito</option>
+                      <option value={FormaPagamentoEnum.Credito}>Crédito</option>
+                      <option value={FormaPagamentoEnum.Dinheiro}>Dinheiro</option>
+                    </select>
                   </div>
 
                   <div className="form-group">
