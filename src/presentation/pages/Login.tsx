@@ -34,7 +34,11 @@ export function Login() {
         setPaymentLink(data.paymentLink);
       } else if (data && data.accessToken) {
         login(data);
-        navigate('/pacientes');
+        navigate('/');
+      } else if (data) {
+        // Assinatura bloqueada sem link de pagamento (ex.: secretária). Não confiar no
+        // subscriptionStatus: ele pode vir "TrialAtivo" mesmo com o trial vencido.
+        setError('A assinatura da clínica está inativa. Fale com o responsável.');
       } else {
         throw new Error('Falha ao obter tokens de acesso.');
       }

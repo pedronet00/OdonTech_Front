@@ -54,7 +54,7 @@ const errorMessage = (err: unknown, fallback = 'Algo deu errado. Tente novamente
 const EMPTY_FORM: NewAppointmentForm = { pacienteId: '', profissionalId: '', time: '', duration: 30, observacao: '' };
 
 export function Schedule() {
-  const { user } = useAuth();
+  const { user, isSecretaria } = useAuth();
   const navigate = useNavigate();
 
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -607,7 +607,7 @@ export function Schedule() {
                 busy={isSaving}
                 findConflict={findConflict}
                 onConfirm={() => handleUpdateStatus(detail, 'confirmar')}
-                onStart={handleStartAtendimento}
+                onStart={isSecretaria ? undefined : handleStartAtendimento}
                 onNoShow={() => handleUpdateStatus(detail, 'falta')}
                 onCancel={() => handleUpdateStatus(detail, 'cancelar')}
                 onReschedule={handleReschedule}

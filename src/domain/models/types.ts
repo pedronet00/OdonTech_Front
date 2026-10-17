@@ -349,6 +349,13 @@ export interface Profissional {
   clinicaId: string;
 }
 
+export interface Secretaria {
+  id: string;
+  nome: string;
+  email: string;
+  ativo: boolean;
+}
+
 export interface ProfissionalRequest {
   nome: string;
   email: string;

@@ -19,6 +19,17 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
   return isAuthenticated ? children : <Navigate to="/entrar" replace />;
 }
 
+/** Telas que a secretária não acessa (a API responde 403). */
+function ProfissionalRoute({ children }: { children: React.ReactNode }) {
+  const { isSecretaria } = useAuth();
+  return isSecretaria ? <Navigate to="/agenda" replace /> : children;
+}
+
+function HomeRedirect() {
+  const { isSecretaria } = useAuth();
+  return <Navigate to={isSecretaria ? '/agenda' : '/pacientes'} replace />;
+}
+
 function App() {
   return (
     <AuthProvider>
@@ -31,11 +42,11 @@ function App() {
           <Route path="/cadastro-integrado/:guid" element={<CadastroIntegrado />} />
 
           <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
-            <Route index element={<Navigate to="/pacientes" replace />} />
+            <Route index element={<HomeRedirect />} />
             <Route path="pacientes" element={<Patients />} />
             <Route path="prontuarios/:id" element={<Records />} />
             <Route path="agenda" element={<Schedule />} />
-            <Route path="financeiro" element={<Finance />} />
+            <Route path="financeiro" element={<ProfissionalRoute><Finance /></ProfissionalRoute>} />
             <Route path="profissionais" element={<Professionals />} />
             <Route path="configuracoes" element={<Settings />} />
           </Route>

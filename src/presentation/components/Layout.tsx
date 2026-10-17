@@ -18,7 +18,7 @@ import './Layout.css';
 
 export function Layout() {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, isSecretaria } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     return localStorage.getItem('sidebar-collapsed') === 'true';
@@ -70,15 +70,17 @@ export function Layout() {
             {!isSidebarCollapsed && <span>Agenda</span>}
           </NavLink>
 
-          <NavLink
-            to="/financeiro"
-            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-            onClick={() => setIsMobileMenuOpen(false)}
-            title="Financeiro"
-          >
-            <DollarSign className="nav-icon" />
-            {!isSidebarCollapsed && <span>Financeiro</span>}
-          </NavLink>
+          {!isSecretaria && (
+            <NavLink
+              to="/financeiro"
+              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+              onClick={() => setIsMobileMenuOpen(false)}
+              title="Financeiro"
+            >
+              <DollarSign className="nav-icon" />
+              {!isSidebarCollapsed && <span>Financeiro</span>}
+            </NavLink>
+          )}
 
           <NavLink
             to="/pacientes"
@@ -132,7 +134,9 @@ export function Layout() {
               <div className="user-avatar">{user?.nome?.substring(0, 1).toUpperCase() || 'US'}</div>
               <div className="user-info">
                 <span className="user-name">{user?.nome || 'Usuário'}</span>
-                <span className="user-role">{user?.clinica_nome || 'Admin'}</span>
+                <span className="user-role">
+                  {isSecretaria ? `Secretária · ${user?.clinica_nome ?? ''}` : user?.clinica_nome || 'Admin'}
+                </span>
               </div>
             </div>
           )}

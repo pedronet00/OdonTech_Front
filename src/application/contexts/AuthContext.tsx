@@ -10,6 +10,7 @@ export interface User {
   clinica_id: string;
   clinica_nome: string;
   cro: string;
+  perfil?: string;
   contexto_admin?: string;
   exp: number;
   iss: string;
@@ -30,6 +31,8 @@ interface AuthContextType {
   login: (data: LoginResponse) => void;
   logout: () => void;
   isAuthenticated: boolean;
+  /** Secretária: acesso restrito a agenda, pacientes, pagamentos e termos. */
+  isSecretaria: boolean;
   loading: boolean;
 }
 
@@ -153,6 +156,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       login,
       logout,
       isAuthenticated: !!user,
+      isSecretaria: user?.perfil?.toLowerCase() === 'secretaria',
       loading
     }}>
       {!loading && children}

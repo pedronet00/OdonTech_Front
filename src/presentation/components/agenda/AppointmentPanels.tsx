@@ -179,7 +179,8 @@ interface AppointmentDetailPanelProps {
   busy: boolean;
   findConflict: ConflictFinder;
   onConfirm: () => void;
-  onStart: () => void;
+  /** Ausente quando o usuário não pode gerar atendimentos (secretária). */
+  onStart?: () => void;
   onNoShow: () => void;
   onCancel: () => void;
   onReschedule: (date: string, time: string) => void;
@@ -292,7 +293,7 @@ export function AppointmentDetailPanel({
               <Check size={18} /> Confirmar presença
             </button>
           )}
-          {key === 'confirmado' && (
+          {key === 'confirmado' && onStart && (
             <button type="button" className="btn btn-primary ag-btn-lg" onClick={onStart} disabled={busy}>
               <CirclePlay size={18} /> {busy ? 'Iniciando…' : 'Iniciar atendimento'}
             </button>
@@ -310,7 +311,7 @@ export function AppointmentDetailPanel({
 
           <div className="ag-foot-row">
             {isOpen && <button type="button" className="btn btn-secondary" onClick={() => setRescheduling(true)}>Reagendar</button>}
-            {key === 'ematendimento' ? (
+            {key === 'ematendimento' && onStart ? (
               <button type="button" className="btn btn-primary ag-btn-lg" onClick={onOpenRecord}>
                 <CirclePlay size={18} /> Continuar atendimento
               </button>

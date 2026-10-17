@@ -42,7 +42,7 @@ function formatDate(dateStr: string | null): string {
 }
 
 export function Settings() {
-  const { user } = useAuth();
+  const { user, isSecretaria } = useAuth();
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [configs, setConfigs] = useState<ClinicaConfiguracoes | null>(null);
@@ -242,6 +242,7 @@ export function Settings() {
                 type="checkbox"
                 checked={configs.permiteAlterarAtendimentosConcluidos}
                 onChange={handleToggleAlterarAtendimentos}
+                disabled={isSecretaria}
               />
               <span className="slider"></span>
             </label>
@@ -265,6 +266,7 @@ export function Settings() {
                 type="checkbox"
                 checked={configs.profissionaisSoPodemVerSeusAtendimentos}
                 onChange={handleToggleVerSeusAtendimentos}
+                disabled={isSecretaria}
               />
               <span className="slider"></span>
             </label>
@@ -272,11 +274,17 @@ export function Settings() {
 
         </div>
 
-        <div className="flex-row justify-end" style={{ marginTop: '32px', borderTop: '1px solid var(--border-subtle)', paddingTop: '24px' }}>
-          <button type="submit" className="btn btn-primary" disabled={isSaving} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Save size={18} /> {isSaving ? 'Salvando...' : 'Salvar Alterações'}
-          </button>
-        </div>
+        {isSecretaria ? (
+          <p style={{ marginTop: '32px', borderTop: '1px solid var(--border-subtle)', paddingTop: '24px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+            Somente o profissional responsável pode alterar estas preferências.
+          </p>
+        ) : (
+          <div className="flex-row justify-end" style={{ marginTop: '32px', borderTop: '1px solid var(--border-subtle)', paddingTop: '24px' }}>
+            <button type="submit" className="btn btn-primary" disabled={isSaving} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Save size={18} /> {isSaving ? 'Salvando...' : 'Salvar Alterações'}
+            </button>
+          </div>
+        )}
       </form>
     </div>
   );

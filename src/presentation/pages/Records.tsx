@@ -24,7 +24,7 @@ const formatCriacaoDate = (dateStr?: string | null) => {
 export function Records() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { token, user } = useAuth();
+  const { token, user, isSecretaria } = useAuth();
 
   const [atendimentos, setAtendimentos] = useState<Atendimento[]>([]);
   const [patient, setPatient] = useState<Patient | null>(null);
@@ -154,7 +154,7 @@ export function Records() {
 
   useEffect(() => {
     fetchData();
-    fetchArquivos();
+    if (!isSecretaria) fetchArquivos();
     fetchTermos();
   }, [id, token]);
 
@@ -557,7 +557,7 @@ export function Records() {
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Histórico clínico e documentos digitais do paciente</p>
         </div>
-        {activeTab === 'timeline' && (
+        {activeTab === 'timeline' && !isSecretaria && (
           <div className="mobile-hide">
             <button className="btn btn-primary" onClick={() => setIsCreating(true)}>
               <FilePlus size={18} /> Novo Atendimento
@@ -566,7 +566,7 @@ export function Records() {
         )}
       </div>
 
-      {activeTab === 'timeline' && (
+      {activeTab === 'timeline' && !isSecretaria && (
         <div className="mobile-only" style={{ marginBottom: '16px' }}>
           <button className="btn btn-primary w-full" onClick={() => setIsCreating(true)}>
             <FilePlus size={18} /> Novo Atendimento
@@ -659,12 +659,14 @@ export function Records() {
         >
           <Activity size={18} /> Linha do Tempo
         </button>
-        <button
-          className={`tab-button ${activeTab === 'files' ? 'active' : ''}`}
-          onClick={() => setActiveTab('files')}
-        >
-          <FileText size={18} /> Arquivos e Exames
-        </button>
+        {!isSecretaria && (
+          <button
+            className={`tab-button ${activeTab === 'files' ? 'active' : ''}`}
+            onClick={() => setActiveTab('files')}
+          >
+            <FileText size={18} /> Arquivos e Exames
+          </button>
+        )}
         <button
           className={`tab-button ${activeTab === 'signatures' ? 'active' : ''}`}
           onClick={() => setActiveTab('signatures')}
@@ -768,7 +770,7 @@ export function Records() {
                           <DollarSign size={14} /> Registrar Pagamento
                         </button>
 
-                        {(canModify || (atendimento.valorPendente == null || atendimento.valorPendente > 0)) && (
+                        {!isSecretaria && (canModify || (atendimento.valorPendente == null || atendimento.valorPendente > 0)) && (
                           <div className="dropdown-container">
                             <button
                               className="action-btn"
@@ -924,15 +926,17 @@ export function Records() {
                                             </button>
                                           </>
                                         )}
-                                        <button
-                                          type="button"
-                                          className="action-btn"
-                                          style={{ padding: '4px', color: 'var(--text-muted)' }}
-                                          onClick={() => handleDeletePaymentItem(pagamento.id, atendimento.id)}
-                                          title="Excluir Pagamento"
-                                        >
-                                          <Trash2 size={14} />
-                                        </button>
+                                        {!isSecretaria && (
+                                          <button
+                                            type="button"
+                                            className="action-btn"
+                                            style={{ padding: '4px', color: 'var(--text-muted)' }}
+                                            onClick={() => handleDeletePaymentItem(pagamento.id, atendimento.id)}
+                                            title="Excluir Pagamento"
+                                          >
+                                            <Trash2 size={14} />
+                                          </button>
+                                        )}
                                       </div>
                                     </div>
                                   </div>

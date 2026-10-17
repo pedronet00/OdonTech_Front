@@ -118,7 +118,7 @@ const formatCriacaoDate = (dateStr?: string | null) => {
 };
 
 export function Patients() {
-  const { user, token } = useAuth();
+  const { user, token, isSecretaria } = useAuth();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -786,21 +786,25 @@ export function Patients() {
                         >
                           <FileText size={16} />Prontuário
                         </button>
-                        <button
-                          className="dropdown-item"
-                          onClick={() => fetchAnamnese(patient.id)}
-                        >
-                          <ClipboardList size={16} /> Anamnese
-                        </button>
-                        <button
-                          className="dropdown-item"
-                          onClick={() => {
-                            handleGenerateLink(0, patient.id);
-                            setActiveDropdown(null);
-                          }}
-                        >
-                          <Link size={16} /> Link Anamnese
-                        </button>
+                        {!isSecretaria && (
+                          <>
+                            <button
+                              className="dropdown-item"
+                              onClick={() => fetchAnamnese(patient.id)}
+                            >
+                              <ClipboardList size={16} /> Anamnese
+                            </button>
+                            <button
+                              className="dropdown-item"
+                              onClick={() => {
+                                handleGenerateLink(0, patient.id);
+                                setActiveDropdown(null);
+                              }}
+                            >
+                              <Link size={16} /> Link Anamnese
+                            </button>
+                          </>
+                        )}
                         <button
                           className="dropdown-item"
                           onClick={() => openFinanceModal(patient)}
@@ -822,12 +826,14 @@ export function Patients() {
                         >
                           <Edit size={16} /> Editar
                         </button>
-                        <button
-                          className="dropdown-item danger"
-                          onClick={() => handleDelete(patient.id)}
-                        >
-                          <Trash2 size={16} /> Excluir
-                        </button>
+                        {!isSecretaria && (
+                          <button
+                            className="dropdown-item danger"
+                            onClick={() => handleDelete(patient.id)}
+                          >
+                            <Trash2 size={16} /> Excluir
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -2130,13 +2136,15 @@ export function Patients() {
                                 </button>
                               </>
                             )}
-                            <button
-                              className="action-btn danger"
-                              title="Excluir Registro"
-                              onClick={() => handleDeletePayment(payment.id)}
-                            >
-                              <Trash2 size={18} />
-                            </button>
+                            {!isSecretaria && (
+                              <button
+                                className="action-btn danger"
+                                title="Excluir Registro"
+                                onClick={() => handleDeletePayment(payment.id)}
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
