@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Building2, MapPin, User, CreditCard, ArrowRight, ArrowLeft,
+  Building2, User, CreditCard, ArrowRight, ArrowLeft,
   CheckCircle2, AlertCircle, Eye, EyeOff, Users, UserCheck,
   Check, X, Loader2, Shield, CalendarCheck, BarChart3
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { API_BASE_URL } from '../../infrastructure/config/api';
-import { applyPhoneMask, applyCepMask, applyCnpjMask, applyCroMask } from '../../utils/masks';
+import { applyPhoneMask, applyCnpjMask, applyCroMask } from '../../utils/masks';
 import { RegistroSucesso } from './RegistroSucesso';
 import './RegistroClinica.css';
 
@@ -32,12 +32,6 @@ function getPasswordStrength(password: string): { level: number; label: string; 
   return { level: score, label: 'Forte', key: 'strong' };
 }
 
-const ESTADOS_BR = [
-  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
-  'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN',
-  'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
-];
-
 export function RegistroClinica() {
 
   const [currentStep, setCurrentStep] = useState(1);
@@ -56,14 +50,6 @@ export function RegistroClinica() {
     clinicaNome: '',
     clinicaCnpj: '',
     clinicaTelefone: '',
-    // Endereço
-    logradouro: '',
-    numero: '',
-    complemento: '',
-    bairro: '',
-    cidade: '',
-    estado: '',
-    cep: '',
     // Responsável
     nome: '',
     email: '',
@@ -75,10 +61,40 @@ export function RegistroClinica() {
 
   const steps = [
     { number: 1, label: 'Clínica', icon: Building2 },
-    { number: 2, label: 'Endereço', icon: MapPin },
-    { number: 3, label: 'Responsável', icon: User },
-    { number: 4, label: 'Plano', icon: CreditCard },
+    { number: 2, label: 'Responsável', icon: User },
   ];
+  const lastStep = steps.length;
+
+  const [cnpjLoading, setCnpjLoading] = useState(false);
+  const [cnpjStatus, setCnpjStatus] = useState<'found' | 'notfound' | null>(null);
+
+  // Busca os dados públicos do CNPJ (BrasilAPI) e preenche nome e telefone se estiverem vazios
+  const lookupCnpj = async (cnpjClean: string) => {
+    setCnpjLoading(true);
+    setCnpjStatus(null);
+    try {
+      const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpjClean}`);
+      if (!response.ok) { setCnpjStatus('notfound'); return; }
+      const data = await response.json();
+      setFormData(prev => ({
+        ...prev,
+        clinicaNome: prev.clinicaNome || data.nome_fantasia || data.razao_social || '',
+        clinicaTelefone: prev.clinicaTelefone || (data.ddd_telefone_1 || '').replace(/\D/g, ''),
+      }));
+      setCnpjStatus('found');
+    } catch {
+      setCnpjStatus('notfound');
+    } finally {
+      setCnpjLoading(false);
+    }
+  };
+
+  const handleCnpjChange = (value: string) => {
+    const cnpjClean = value.replace(/\D/g, '').slice(0, 14);
+    handleChange('clinicaCnpj', cnpjClean);
+    if (cnpjClean.length === 14 && cnpjClean !== formData.clinicaCnpj) lookupCnpj(cnpjClean);
+    else if (cnpjClean.length < 14) setCnpjStatus(null);
+  };
 
   // Fetch planos on mount
   useEffect(() => {
@@ -103,29 +119,6 @@ export function RegistroClinica() {
     }
   };
 
-  // CEP auto-fill
-  const handleCepBlur = async () => {
-    const cepClean = formData.cep.replace(/\D/g, '');
-    if (cepClean.length !== 8) return;
-
-    try {
-      const response = await fetch(`https://viacep.com.br/ws/${cepClean}/json/`);
-      const data = await response.json();
-      if (!data.erro) {
-        setFormData(prev => ({
-          ...prev,
-          logradouro: data.logradouro || prev.logradouro,
-          bairro: data.bairro || prev.bairro,
-          cidade: data.localidade || prev.cidade,
-          estado: data.uf || prev.estado,
-          complemento: data.complemento || prev.complemento,
-        }));
-      }
-    } catch (err) {
-      // Silently fail - user can fill manually
-    }
-  };
-
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     setError('');
@@ -140,27 +133,14 @@ export function RegistroClinica() {
         if (cnpjClean.length !== 14) { setError('CNPJ inválido. Deve conter 14 dígitos.'); return false; }
         const phoneClean = formData.clinicaTelefone.replace(/\D/g, '');
         if (phoneClean.length < 10) { setError('Telefone inválido.'); return false; }
+        if (!formData.planoId) { setError('Selecione um plano.'); return false; }
         return true;
       }
       case 2: {
-        if (!formData.logradouro.trim()) { setError('Informe o logradouro.'); return false; }
-        if (!formData.numero.trim()) { setError('Informe o número.'); return false; }
-        if (!formData.bairro.trim()) { setError('Informe o bairro.'); return false; }
-        if (!formData.cidade.trim()) { setError('Informe a cidade.'); return false; }
-        if (!formData.estado) { setError('Selecione o estado.'); return false; }
-        const cepClean = formData.cep.replace(/\D/g, '');
-        if (cepClean.length !== 8) { setError('CEP inválido.'); return false; }
-        return true;
-      }
-      case 3: {
         if (!formData.nome.trim()) { setError('Informe o nome do responsável.'); return false; }
         if (!formData.email.trim() || !/\S+@\S+\.\S+/.test(formData.email)) { setError('Email inválido.'); return false; }
         if (formData.senha.length < 6) { setError('A senha deve ter no mínimo 6 caracteres.'); return false; }
         if (!formData.cro.trim()) { setError('Informe o CRO.'); return false; }
-        return true;
-      }
-      case 4: {
-        if (!formData.planoId) { setError('Selecione um plano.'); return false; }
         return true;
       }
       default: return true;
@@ -180,7 +160,7 @@ export function RegistroClinica() {
   };
 
   const handleSubmit = async () => {
-    if (!validateStep(4)) return;
+    if (!validateStep(lastStep)) return;
 
     setSubmitting(true);
     setError('');
@@ -189,13 +169,6 @@ export function RegistroClinica() {
       clinicaNome: formData.clinicaNome.trim(),
       clinicaCnpj: formData.clinicaCnpj.replace(/\D/g, ''),
       clinicaTelefone: formData.clinicaTelefone.replace(/\D/g, ''),
-      logradouro: formData.logradouro.trim(),
-      numero: parseInt(formData.numero) || 0,
-      complemento: formData.complemento.trim() || null,
-      bairro: formData.bairro.trim(),
-      cidade: formData.cidade.trim(),
-      estado: formData.estado,
-      cep: formData.cep.replace(/\D/g, ''),
       nome: formData.nome.trim(),
       email: formData.email.trim(),
       senha: formData.senha,
@@ -347,7 +320,7 @@ export function RegistroClinica() {
                       type="text"
                       placeholder="00.000.000/0000-00"
                       value={applyCnpjMask(formData.clinicaCnpj)}
-                      onChange={e => handleChange('clinicaCnpj', e.target.value.replace(/\D/g, ''))}
+                      onChange={e => handleCnpjChange(e.target.value)}
                       maxLength={18}
                     />
                   </div>
@@ -365,93 +338,8 @@ export function RegistroClinica() {
               </>
             )}
 
-            {/* Step 2: Endereço */}
+            {/* Step 2: Responsável */}
             {currentStep === 2 && (
-              <>
-                <div className="registro-section-title">
-                  <MapPin size={20} /> Endereço da Clínica
-                </div>
-                <div className="registro-form-grid">
-                  <div className="registro-form-group">
-                    <label>CEP <span className="required">*</span></label>
-                    <input
-                      type="text"
-                      placeholder="00000-000"
-                      value={applyCepMask(formData.cep)}
-                      onChange={e => handleChange('cep', e.target.value.replace(/\D/g, ''))}
-                      onBlur={handleCepBlur}
-                      maxLength={9}
-                    />
-                    <span className="input-hint">Preencha o CEP para autocompletar</span>
-                  </div>
-                  <div className="registro-form-group">
-                    <label>Estado <span className="required">*</span></label>
-                    <select
-                      value={formData.estado}
-                      onChange={e => handleChange('estado', e.target.value)}
-                    >
-                      <option value="">Selecione...</option>
-                      {ESTADOS_BR.map(uf => (
-                        <option key={uf} value={uf}>{uf}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="registro-form-group full-width">
-                    <label>Logradouro <span className="required">*</span></label>
-                    <input
-                      type="text"
-                      placeholder="Rua, avenida, travessa..."
-                      value={formData.logradouro}
-                      onChange={e => handleChange('logradouro', e.target.value)}
-                      maxLength={200}
-                    />
-                  </div>
-                  <div className="registro-form-group">
-                    <label>Número <span className="required">*</span></label>
-                    <input
-                      type="text"
-                      placeholder="123"
-                      value={formData.numero}
-                      onChange={e => handleChange('numero', e.target.value.replace(/\D/g, ''))}
-                      maxLength={10}
-                    />
-                  </div>
-                  <div className="registro-form-group">
-                    <label>Complemento</label>
-                    <input
-                      type="text"
-                      placeholder="Sala, bloco, andar..."
-                      value={formData.complemento}
-                      onChange={e => handleChange('complemento', e.target.value)}
-                      maxLength={100}
-                    />
-                  </div>
-                  <div className="registro-form-group">
-                    <label>Bairro <span className="required">*</span></label>
-                    <input
-                      type="text"
-                      placeholder="Bairro"
-                      value={formData.bairro}
-                      onChange={e => handleChange('bairro', e.target.value)}
-                      maxLength={100}
-                    />
-                  </div>
-                  <div className="registro-form-group">
-                    <label>Cidade <span className="required">*</span></label>
-                    <input
-                      type="text"
-                      placeholder="Cidade"
-                      value={formData.cidade}
-                      onChange={e => handleChange('cidade', e.target.value)}
-                      maxLength={100}
-                    />
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* Step 3: Responsável */}
-            {currentStep === 3 && (
               <>
                 <div className="registro-section-title">
                   <User size={20} /> Dados do Responsável
@@ -538,10 +426,10 @@ export function RegistroClinica() {
               </>
             )}
 
-            {/* Step 4: Plano */}
-            {currentStep === 4 && (
+            {/* Step 1 (cont.): Plano */}
+            {currentStep === 1 && (
               <>
-                <div className="registro-section-title">
+                <div className="registro-section-title" style={{ marginTop: '24px' }}>
                   <CreditCard size={20} /> Escolha seu Plano
                 </div>
                 {planosLoading ? (
@@ -600,7 +488,7 @@ export function RegistroClinica() {
                 <div />
               )}
 
-              {currentStep < 4 ? (
+              {currentStep < lastStep ? (
                 <button
                   className="registro-btn registro-btn-primary"
                   onClick={handleNext}
