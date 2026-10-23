@@ -321,10 +321,7 @@ export function CadastroIntegrado() {
       let targetPatientId = '';
 
       if (metadata?.tipoCadastro === 'SomenteAnamnese') {
-        if (!metadata.pacienteId) {
-          throw new Error('Paciente associado não encontrado nos metadados de cadastro.');
-        }
-        targetPatientId = metadata.pacienteId;
+        
       } else {
         // 1. Submit Patient data
         const patientPayload = {

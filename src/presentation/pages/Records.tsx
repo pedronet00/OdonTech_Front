@@ -154,7 +154,7 @@ export function Records() {
 
   useEffect(() => {
     fetchData();
-    if (!isSecretaria) fetchArquivos();
+    fetchArquivos();
     fetchTermos();
   }, [id, token]);
 
@@ -659,14 +659,12 @@ export function Records() {
         >
           <Activity size={18} /> Linha do Tempo
         </button>
-        {!isSecretaria && (
-          <button
-            className={`tab-button ${activeTab === 'files' ? 'active' : ''}`}
-            onClick={() => setActiveTab('files')}
-          >
-            <FileText size={18} /> Arquivos e Exames
-          </button>
-        )}
+        <button
+          className={`tab-button ${activeTab === 'files' ? 'active' : ''}`}
+          onClick={() => setActiveTab('files')}
+        >
+          <FileText size={18} /> Arquivos e Exames
+        </button>
         <button
           className={`tab-button ${activeTab === 'signatures' ? 'active' : ''}`}
           onClick={() => setActiveTab('signatures')}
