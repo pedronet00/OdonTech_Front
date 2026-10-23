@@ -65,35 +65,9 @@ export function RegistroClinica() {
   ];
   const lastStep = steps.length;
 
-  const [cnpjLoading, setCnpjLoading] = useState(false);
-  const [cnpjStatus, setCnpjStatus] = useState<'found' | 'notfound' | null>(null);
-
-  // Busca os dados públicos do CNPJ (BrasilAPI) e preenche nome e telefone se estiverem vazios
-  const lookupCnpj = async (cnpjClean: string) => {
-    setCnpjLoading(true);
-    setCnpjStatus(null);
-    try {
-      const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpjClean}`);
-      if (!response.ok) { setCnpjStatus('notfound'); return; }
-      const data = await response.json();
-      setFormData(prev => ({
-        ...prev,
-        clinicaNome: prev.clinicaNome || data.nome_fantasia || data.razao_social || '',
-        clinicaTelefone: prev.clinicaTelefone || (data.ddd_telefone_1 || '').replace(/\D/g, ''),
-      }));
-      setCnpjStatus('found');
-    } catch {
-      setCnpjStatus('notfound');
-    } finally {
-      setCnpjLoading(false);
-    }
-  };
-
   const handleCnpjChange = (value: string) => {
     const cnpjClean = value.replace(/\D/g, '').slice(0, 14);
     handleChange('clinicaCnpj', cnpjClean);
-    if (cnpjClean.length === 14 && cnpjClean !== formData.clinicaCnpj) lookupCnpj(cnpjClean);
-    else if (cnpjClean.length < 14) setCnpjStatus(null);
   };
 
   // Fetch planos on mount
