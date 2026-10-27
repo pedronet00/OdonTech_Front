@@ -185,13 +185,27 @@
 .ag-today { height: 38px; }
 
 .ag-header-actions {
+  flex: 1;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 12px;
 }
 
+/* View switcher + professional filter, below the summary in the side column */
+.ag-controls {
+  border-top: 1px solid var(--ag-line);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ag-controls .ag-views { width: 100%; }
+.ag-controls .ag-views button { flex: 1; justify-content: center; padding: 0 8px; }
+
 .ag-filter {
-  width: 230px;
+  width: 100%;
   height: 40px;
   padding: 8px 12px;
   font-size: 0.9rem;
@@ -209,12 +223,12 @@
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: 272px minmax(0, 1fr);
+  grid-template-columns: 302px minmax(0, 1fr);
   gap: 20px;
 }
 
 .ag-page.has-panel .ag-body {
-  grid-template-columns: 272px minmax(0, 1fr) 384px;
+  grid-template-columns: 302px minmax(0, 1fr) 384px;
 }
 
 .ag-side,
@@ -875,6 +889,12 @@
 
 .ag-combo-list li.is-active { background: var(--bg-surface-hover); }
 
+.ag-combo-list .ag-combo-create {
+  color: var(--primary);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
 .ag-combo-list .ag-combo-empty {
   cursor: default;
   font-size: 0.85rem;
@@ -907,6 +927,71 @@
 }
 
 .ag-patient-chosen .ag-link-btn { margin-left: auto; }
+
+/* Appointment search (header) */
+
+.ag-search {
+  flex: 1;
+  max-width: 560px;
+}
+
+.ag-search-input {
+  height: 44px;
+  padding-right: 38px;
+  font-size: 0.95rem;
+}
+
+.ag-search-input::-webkit-search-cancel-button { display: none; }
+
+.ag-search-clear {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.ag-search-list { max-height: 420px; }
+
+.ag-combo-list li.ag-search-item {
+  display: block;
+  padding: 0;
+  cursor: default;
+}
+
+.ag-search-patient {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 10px 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.ag-search-item + .ag-search-item .ag-search-patient {
+  margin-top: 4px;
+  border-top: 1px solid var(--ag-line);
+}
+
+.ag-search-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px 8px 44px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.ag-search-row.is-active { background: var(--bg-surface-hover); }
+.ag-search-row.is-past .ag-patient-text { opacity: 0.7; }
+.ag-search-row .ag-pill { flex-shrink: 0; }
+
+.ag-combo-list .ag-combo-empty.is-error { color: var(--danger); }
+
+.ag-spin { animation: ag-spin 0.8s linear infinite; }
+
+@keyframes ag-spin { to { transform: rotate(360deg); } }
 
 /* Details */
 
@@ -1052,10 +1137,6 @@
 .ag-title.is-range .ag-title-month { font-size: 1.5rem; letter-spacing: -0.015em; }
 
 /* The month view doesn't need the side column: the grid is the calendar. */
-.ag-page.view-calendario .ag-side,
-.ag-page.view-calendario .ag-side-toggle { display: none; }
-.ag-page.view-calendario .ag-body { grid-template-columns: minmax(0, 1fr); }
-.ag-page.view-calendario.has-panel .ag-body { grid-template-columns: minmax(0, 1fr) 384px; }
 
 /* ---------- List view ---------- */
 
@@ -1389,16 +1470,13 @@
   }
 
   .ag-header-actions { width: 100%; }
-  .ag-filter { flex: 1; width: auto; }
+  .ag-search { max-width: none; }
   .ag-title-day { font-size: 2.75rem; }
   .ag-daynav .ag-today { flex: 1; }
 
   .ag-timeline-inner { --gutter: 52px; }
   .ag-hour-label { right: 8px; }
 
-  .ag-header-actions { flex-wrap: wrap; }
-  .ag-views { width: 100%; }
-  .ag-views button { flex: 1; justify-content: center; }
   .ag-title.is-range .ag-title-month { font-size: 1.3rem; }
 
   /* List rows stack: time | patient + status, professional below */

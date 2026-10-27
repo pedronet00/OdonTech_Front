@@ -608,9 +608,11 @@ export function Records() {
               <div className="flex-col gap-1">
                 <div className="flex-row items-center gap-2" style={{ flexWrap: 'wrap' }}>
                   <h2 style={{ fontSize: '1.4rem', fontWeight: 700, margin: 0 }}>{patient.nome}</h2>
-                  <span className="badge" style={{ background: 'rgba(2, 132, 199, 0.1)', color: 'var(--primary)', border: '1px solid rgba(2, 132, 199, 0.2)', padding: '2px 8px', borderRadius: '6px', fontSize: '0.75rem' }}>
-                    {convenioMap[patient.convenio] || 'Outros'}
-                  </span>
+                  {patient.convenio && convenioMap[patient.convenio] && (
+                    <span className="badge" style={{ background: 'rgba(2, 132, 199, 0.1)', color: 'var(--primary)', border: '1px solid rgba(2, 132, 199, 0.2)', padding: '2px 8px', borderRadius: '6px', fontSize: '0.75rem' }}>
+                      {convenioMap[patient.convenio]}
+                    </span>
+                  )}
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '8px 24px', marginTop: '8px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>

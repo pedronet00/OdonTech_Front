@@ -75,12 +75,14 @@ interface NewAppointmentPanelProps {
   findConflict: ConflictFinder;
   onDateChange: (date: Date) => void;
   onChange: (patch: Partial<NewAppointmentForm>) => void;
+  /** Abre o cadastro de paciente com o texto digitado na busca. */
+  onCreatePatient?: (query: string) => void;
   onSubmit: () => void;
   onClose: () => void;
 }
 
 export function NewAppointmentPanel({
-  date, now, form, patients, professionals, saving, findConflict, onDateChange, onChange, onSubmit, onClose,
+  date, now, form, patients, professionals, saving, findConflict, onDateChange, onChange, onCreatePatient, onSubmit, onClose,
 }: NewAppointmentPanelProps) {
   const dateValue = format(date, 'yyyy-MM-dd');
   const startMin = form.time ? fromHHmm(form.time) : null;
@@ -102,7 +104,7 @@ export function NewAppointmentPanel({
       <div className="ag-panel-scroll">
         <div className="ag-field">
           <label className="input-label" htmlFor="ag-patient">Paciente</label>
-          <PatientPicker patients={patients} value={form.pacienteId} onChange={pacienteId => onChange({ pacienteId })} />
+          <PatientPicker patients={patients} value={form.pacienteId} onChange={pacienteId => onChange({ pacienteId })} onCreateNew={onCreatePatient} />
         </div>
 
         <div className="ag-field">

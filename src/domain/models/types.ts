@@ -15,7 +15,7 @@ export interface Patient {
   cpf: string | null;
   dataNascimento: string | null;
   sexo: string | number;
-  convenio: number;
+  convenio: number | null;
   telefone: string;
   clinicaId: string;
   nomeClinica?: string;

@@ -1,6 +1,6 @@
 import { useId, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search } from 'lucide-react';
+import { Search, UserPlus } from 'lucide-react';
 import type { Patient } from '../../../domain/models/types';
 import { initials, normalizeText } from './agendaUtils';
 
@@ -8,11 +8,13 @@ interface PatientPickerProps {
   patients: Patient[];
   value: string;
   onChange: (patientId: string) => void;
+  /** Abre o cadastro de paciente; recebe o texto digitado na busca. */
+  onCreateNew?: (query: string) => void;
 }
 
 const MAX_RESULTS = 7;
 
-export function PatientPicker({ patients, value, onChange }: PatientPickerProps) {
+export function PatientPicker({ patients, value, onChange, onCreateNew }: PatientPickerProps) {
   const listId = useId();
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
@@ -54,10 +56,18 @@ export function PatientPicker({ patients, value, onChange }: PatientPickerProps)
   if (patients.length === 0) {
     return (
       <p className="ag-hint">
-        Nenhum paciente cadastrado ainda. <Link to="/pacientes">Cadastrar paciente</Link>
+        Nenhum paciente cadastrado ainda.{' '}
+        {onCreateNew
+          ? <button type="button" className="ag-link-btn" onClick={() => onCreateNew('')}>Cadastrar paciente</button>
+          : <Link to="/pacientes">Cadastrar paciente</Link>}
       </p>
     );
   }
+
+  const createNew = () => {
+    setOpen(false);
+    onCreateNew?.(query.trim());
+  };
 
   return (
     <div className="ag-combo">
@@ -80,12 +90,24 @@ export function PatientPicker({ patients, value, onChange }: PatientPickerProps)
           if (e.key === 'ArrowDown') { e.preventDefault(); setOpen(true); setActive(i => Math.min(i + 1, results.length - 1)); }
           if (e.key === 'ArrowUp') { e.preventDefault(); setActive(i => Math.max(i - 1, 0)); }
           if (e.key === 'Enter' && open && results[active]) { e.preventDefault(); choose(results[active]); }
+          else if (e.key === 'Enter' && open && results.length === 0 && onCreateNew) { e.preventDefault(); createNew(); }
           if (e.key === 'Escape' && open) { e.stopPropagation(); setOpen(false); }
         }}
       />
       {open && (
         <ul className="ag-combo-list" id={listId} role="listbox">
           {results.length === 0 && <li className="ag-combo-empty">Nenhum paciente encontrado para “{query}”.</li>}
+          {results.length === 0 && onCreateNew && (
+            <li
+              role="option"
+              aria-selected="true"
+              className="is-active ag-combo-create"
+              onMouseDown={e => { e.preventDefault(); createNew(); }}
+            >
+              <UserPlus size={16} aria-hidden="true" />
+              <span>Cadastrar novo paciente{query.trim() && <> “<strong>{query.trim()}</strong>”</>}</span>
+            </li>
+          )}
           {results.map((p, i) => (
             <li
               key={p.id}

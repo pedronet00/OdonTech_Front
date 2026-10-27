@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CalendarDays, CalendarRange, ChevronLeft, ChevronRight, Columns3, List, Plus } from 'lucide-react';
 import {
@@ -15,6 +15,9 @@ import { DayTimeline, type TimelineColumn } from '../components/agenda/DayTimeli
 import { AppointmentDetailPanel, NewAppointmentPanel, type NewAppointmentForm } from '../components/agenda/AppointmentPanels';
 import { AppointmentList } from '../components/agenda/AppointmentList';
 import { MonthCalendar } from '../components/agenda/MonthCalendar';
+import { AppointmentSearch } from '../components/agenda/AppointmentSearch';
+import { NewPatientModal } from '../components/NewPatientModal';
+import { applyCpfMask } from '../../utils/masks';
 import {
   STATUS_META, STATUS_ORDER, SLOT_MIN,
   appointmentSpan, dayRange, fromHHmm, minutesOfDay, statusKey, toHHmm,
@@ -77,6 +80,9 @@ export function Schedule() {
   const [detail, setDetail] = useState<Agendamento | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  /** Dados iniciais do cadastro rápido de paciente; null quando o modal está fechado. */
+  const [newPatientDraft, setNewPatientDraft] = useState<Partial<Patient> | null>(null);
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 60_000);
@@ -239,7 +245,7 @@ export function Schedule() {
     setDetail(null);
   };
 
-  // Keyboard: ← → move one period, T jumps to today, G/L/C switch views, Esc closes the panel.
+  // Keyboard: ← → move one period, T jumps to today, G/L/C switch views, / focuses search, Esc closes the panel.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && panel) { closePanel(); return; }
@@ -249,6 +255,7 @@ export function Schedule() {
       if (e.key === 'ArrowLeft') step(-1);
       if (e.key === 'ArrowRight') step(1);
       if (key === 't') goToDate(new Date());
+      if (e.key === '/') { e.preventDefault(); searchRef.current?.focus(); return; }
       const shortcut = VIEWS.find(v => v.shortcut.toLowerCase() === key);
       if (shortcut) changeView(shortcut.id);
     };
@@ -285,6 +292,20 @@ export function Schedule() {
       toast.error(errorMessage(err));
       if (!local) closePanel();
     }
+  };
+
+  /** Usa o texto da busca como nome, ou como CPF quando são 11 dígitos. */
+  const openNewPatient = (query: string) => {
+    const digits = query.replace(/\D/g, '');
+    if (/[a-zA-ZÀ-ÿ]/.test(query)) setNewPatientDraft({ nome: query });
+    else if (digits.length === 11) setNewPatientDraft({ cpf: applyCpfMask(digits) });
+    else setNewPatientDraft({});
+  };
+
+  const handlePatientCreated = (patient: Patient) => {
+    setPatients(prev => [...prev.filter(p => p.id !== patient.id), patient]);
+    setForm(prev => ({ ...prev, pacienteId: patient.id }));
+    setNewPatientDraft(null);
   };
 
   const handleCreate = async () => {
@@ -457,32 +478,14 @@ export function Schedule() {
         </div>
 
         <div className="ag-header-actions">
-          <div className="ag-views" role="radiogroup" aria-label="Modo de visualização">
-            {VIEWS.map(({ id, label, shortcut, Icon }) => (
-              <button
-                key={id}
-                type="button"
-                role="radio"
-                aria-checked={view === id}
-                className={view === id ? 'is-on' : ''}
-                onClick={() => changeView(id)}
-                title={`${label} (${shortcut})`}
-              >
-                <Icon size={16} aria-hidden="true" />
-                <span>{label}</span>
-              </button>
-            ))}
-          </div>
-          <label className="ag-sr-only" htmlFor="ag-filter">Profissional</label>
-          <select
-            id="ag-filter"
-            className="input-field ag-filter"
-            value={filterProfessionalId}
-            onChange={e => { setLoading(true); setFilterProfessionalId(e.target.value); }}
-          >
-            <option value="all">Todos os profissionais</option>
-            {professionals.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
-          </select>
+          <AppointmentSearch
+            ref={searchRef}
+            now={now}
+            onSelect={app => {
+              goToDate(parseISO(app.dataHoraInicio));
+              openDetail(app.id);
+            }}
+          />
           <button type="button" className="btn btn-primary ag-new" onClick={() => openCreate()} title="Novo Agendamento">
             <Plus size={18} /> Novo Agendamento
           </button>
@@ -534,6 +537,35 @@ export function Schedule() {
               <input type="checkbox" checked={showCancelled} onChange={e => setShowCancelled(e.target.checked)} />
               <span>Mostrar consultas canceladas</span>
             </label>
+          </section>
+
+          <section className="ag-controls" aria-label="Visualização">
+            <div className="ag-views" role="radiogroup" aria-label="Modo de visualização">
+              {VIEWS.map(({ id, label, shortcut, Icon }) => (
+                <button
+                  key={id}
+                  type="button"
+                  role="radio"
+                  aria-checked={view === id}
+                  className={view === id ? 'is-on' : ''}
+                  onClick={() => changeView(id)}
+                  title={`${label} (${shortcut})`}
+                >
+                  <Icon size={16} aria-hidden="true" />
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
+            <label className="ag-sr-only" htmlFor="ag-filter">Profissional</label>
+            <select
+              id="ag-filter"
+              className="input-field ag-filter"
+              value={filterProfessionalId}
+              onChange={e => { setLoading(true); setFilterProfessionalId(e.target.value); }}
+            >
+              <option value="all">Todos os profissionais</option>
+              {professionals.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
+            </select>
           </section>
         </aside>
 
@@ -595,6 +627,7 @@ export function Schedule() {
                 findConflict={findConflict}
                 onDateChange={goToDate}
                 onChange={patch => setForm(prev => ({ ...prev, ...patch }))}
+                onCreatePatient={openNewPatient}
                 onSubmit={handleCreate}
                 onClose={closePanel}
               />
@@ -619,6 +652,14 @@ export function Schedule() {
           </aside>
         )}
       </div>
+
+      {newPatientDraft && (
+        <NewPatientModal
+          initialData={newPatientDraft}
+          onClose={() => setNewPatientDraft(null)}
+          onCreated={handlePatientCreated}
+        />
+      )}
     </div>
   );
 }

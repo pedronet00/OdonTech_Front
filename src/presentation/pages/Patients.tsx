@@ -9,6 +9,9 @@ import toast from 'react-hot-toast';
 import { applyCpfMask, applyPhoneMask, applyCepMask } from '../../utils/masks';
 import { confirmAction } from '../../utils/alerts';
 import { API_BASE_URL } from '../../infrastructure/config/api';
+import { validateEndereco } from '../../utils/endereco';
+import { NewPatientModal } from '../components/NewPatientModal';
+import { CONVENIO_MAP } from '../../domain/models/convenios';
 
 const getDeficienciaId = (val: any): number => {
   if (val === null || val === undefined) return 0;
@@ -127,7 +130,6 @@ export function Patients() {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
   const [isCreating, setIsCreating] = useState(false);
-  const [newPatient, setNewPatient] = useState<Partial<Patient> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -145,10 +147,7 @@ export function Patients() {
     observacao: ''
   });
 
-  const convenioMap: { [key: number]: string } = {
-    1: 'Unimed', 2: 'Bradesco', 3: 'Amil', 4: 'SulAmerica', 5: 'OesteSaude',
-    6: 'Athia', 7: 'SUS', 8: 'Particular', 9: 'Outros'
-  };
+  const convenioMap = CONVENIO_MAP;
 
   const fetchPatients = async () => {
     if (!user?.clinica_id) return;
@@ -216,71 +215,6 @@ export function Patients() {
     }
   };
 
-  const validateEndereco = (endereco: any) => {
-    if (!endereco) return { isValid: true, data: null };
-
-    const logradouro = endereco.logradouro?.trim() || '';
-    const numero = endereco.numero;
-    const complemento = endereco.complemento?.trim() || null;
-    const bairro = endereco.bairro?.trim() || '';
-    const cidade = endereco.cidade?.trim() || '';
-    const estado = endereco.estado?.trim().toUpperCase() || '';
-    const cep = endereco.cep?.trim() || '';
-
-    const hasAnyField = !!(logradouro || numero || complemento || bairro || cidade || estado || cep);
-    if (!hasAnyField) {
-      return { isValid: true, data: null };
-    }
-
-    if (!logradouro) {
-      toast.error('Logradouro é obrigatório no endereço.');
-      return { isValid: false, data: null };
-    }
-    if (!numero || Number(numero) <= 0) {
-      toast.error('Número do endereço deve ser maior que zero.');
-      return { isValid: false, data: null };
-    }
-    if (!bairro) {
-      toast.error('Bairro é obrigatório no endereço.');
-      return { isValid: false, data: null };
-    }
-    if (!cidade) {
-      toast.error('Cidade é obrigatória no endereço.');
-      return { isValid: false, data: null };
-    }
-
-    const UfsValidas = new Set([
-      "AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO",
-      "MA", "MG", "MS", "MT", "PA", "PB", "PE", "PI", "PR",
-      "RJ", "RN", "RO", "RR", "RS", "SC", "SE", "SP", "TO"
-    ]);
-    if (!UfsValidas.has(estado)) {
-      toast.error(`Estado (UF) inválido: '${endereco.estado || ''}'.`);
-      return { isValid: false, data: null };
-    }
-
-    const apenasDigitos = cep.replace(/\D/g, '');
-    if (apenasDigitos.length !== 8) {
-      toast.error('CEP inválido. Deve conter 8 dígitos.');
-      return { isValid: false, data: null };
-    }
-
-    const cepFormatado = `${apenasDigitos.substring(0, 5)}-${apenasDigitos.substring(5)}`;
-
-    return {
-      isValid: true,
-      data: {
-        logradouro,
-        numero: Number(numero),
-        complemento,
-        bairro,
-        cidade,
-        estado,
-        cep: cepFormatado
-      }
-    };
-  };
-
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingPatient) return;
@@ -295,6 +229,7 @@ export function Patients() {
         sexo: editingPatient.sexo === 'Masculino' ? 0 : 1,
         dataNascimento: (editingPatient.dataNascimento && typeof editingPatient.dataNascimento === 'string' && editingPatient.dataNascimento.trim() !== '') ? editingPatient.dataNascimento : null,
         cpf: (editingPatient.cpf && typeof editingPatient.cpf === 'string' && editingPatient.cpf.trim() !== '') ? editingPatient.cpf : null,
+        convenio: editingPatient.convenio || null,
         endereco: validation.data,
         profissao: editingPatient.profissao || null,
         nomeContatoEmergencia: editingPatient.nomeContatoEmergencia || null,
@@ -303,37 +238,6 @@ export function Patients() {
       toast.success('Paciente atualizado com sucesso!');
       await fetchPatients();
       setEditingPatient(null);
-    } catch (err: any) {
-      toast.error(err.message);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newPatient || !user?.clinica_id) return;
-
-    const validation = validateEndereco(newPatient.endereco);
-    if (!validation.isValid) return;
-
-    try {
-      setIsSaving(true);
-      const payload = {
-        ...newPatient,
-        clinicaId: user.clinica_id,
-        sexo: newPatient.sexo === 'Masculino' ? 0 : 1,
-        dataNascimento: (newPatient.dataNascimento && typeof newPatient.dataNascimento === 'string' && newPatient.dataNascimento.trim() !== '') ? newPatient.dataNascimento : null,
-        cpf: (newPatient.cpf && typeof newPatient.cpf === 'string' && newPatient.cpf.trim() !== '') ? newPatient.cpf : null,
-        endereco: validation.data,
-        profissao: newPatient.profissao || null,
-        nomeContatoEmergencia: newPatient.nomeContatoEmergencia || null,
-        telefoneContatoEmergencia: newPatient.telefoneContatoEmergencia || null
-      };
-      await ApiClient.post('/pacientes', payload);
-      toast.success('Paciente cadastrado com sucesso!');
-      await fetchPatients();
-      setIsCreating(false);
     } catch (err: any) {
       toast.error(err.message);
     } finally {
@@ -674,10 +578,7 @@ export function Patients() {
     setActiveDropdown(null);
   };
 
-  const openCreateModal = () => {
-    setNewPatient({ nome: '', email: '', cpf: '', dataNascimento: '', sexo: 'Masculino', convenio: 1, telefone: '', endereco: { logradouro: '', numero: 0, complemento: '', bairro: '', cidade: '', estado: '', cep: '' }, profissao: '', nomeContatoEmergencia: '', telefoneContatoEmergencia: '' });
-    setIsCreating(true);
-  };
+  const openCreateModal = () => setIsCreating(true);
 
   const ITEMS_PER_PAGE = 5;
 
@@ -765,7 +666,7 @@ export function Patients() {
                   </div>
                 </td>
                 <td data-label="CPF">{patient.cpf || 'Não informado'}</td>
-                <td data-label="Convênio">{convenioMap[patient.convenio] || 'N/A'}</td>
+                <td data-label="Convênio">{(patient.convenio && convenioMap[patient.convenio]) || 'Não informado'}</td>
                 <td data-label="Ações" style={{ textAlign: 'right' }}>
                   <div className="dropdown-container">
                     <button
@@ -883,246 +784,14 @@ export function Patients() {
       </div>
 
       {/* Modal de Criação */}
-      {isCreating && newPatient && (
-        <div className="modal-overlay" onClick={() => setIsCreating(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Novo Paciente</h2>
-              <button onClick={() => setIsCreating(false)} className="action-btn">
-                <X size={24} />
-              </button>
-            </div>
-            <form onSubmit={handleCreate}>
-              <div className="modal-body">
-                <div className="form-group-container">
-                  <div className="form-group">
-                    <label className="input-label">Nome Completo <span style={{ color: '#ef4444' }}>*</span></label>
-                    <input
-                      type="text"
-                      className="input-field"
-                      placeholder="Ex: João da Silva Filho"
-                      maxLength={100}
-                      value={newPatient.nome}
-                      onChange={e => setNewPatient({ ...newPatient, nome: e.target.value })}
-                      required
-                    />
-                  </div>
-
-                  <div className="grid-cols-2">
-                    <div className="form-group">
-                      <label className="input-label">Email</label>
-                      <input
-                        type="email"
-                        className="input-field"
-                        placeholder="email@exemplo.com"
-                        maxLength={100}
-                        value={newPatient.email || ''}
-                        onChange={e => setNewPatient({ ...newPatient, email: e.target.value })}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label className="input-label">Telefone <span style={{ color: '#ef4444' }}>*</span></label>
-                      <input
-                        type="text"
-                        className="input-field"
-                        placeholder="(00) 00000-0000"
-                        maxLength={15}
-                        value={newPatient.telefone}
-                        onChange={e => setNewPatient({ ...newPatient, telefone: applyPhoneMask(e.target.value) })}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid-cols-2">
-                    <div className="form-group">
-                      <label className="input-label">CPF</label>
-                      <input
-                        type="text"
-                        className="input-field"
-                        placeholder="000.000.000-00"
-                        maxLength={14}
-                        value={newPatient.cpf || ''}
-                        onChange={e => setNewPatient({ ...newPatient, cpf: applyCpfMask(e.target.value) })}
-                      // required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label className="input-label">Data de Nascimento</label>
-                      <input
-                        type="date"
-                        className="input-field"
-                        value={newPatient.dataNascimento || ''}
-                        onChange={e => setNewPatient({ ...newPatient, dataNascimento: e.target.value })}
-                      // required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid-cols-2">
-                    <div className="form-group">
-                      <label className="input-label">Sexo <span style={{ color: '#ef4444' }}>*</span></label>
-                      <select
-                        className="input-field"
-                        value={newPatient.sexo}
-                        onChange={e => setNewPatient({ ...newPatient, sexo: e.target.value })}
-                      >
-                        <option value="Masculino">Masculino</option>
-                        <option value="Feminino">Feminino</option>
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label className="input-label">Convênio <span style={{ color: '#ef4444' }}>*</span></label>
-                      <select
-                        className="input-field"
-                        value={newPatient.convenio}
-                        onChange={e => setNewPatient({ ...newPatient, convenio: parseInt(e.target.value) })}
-                      >
-                        {Object.entries(convenioMap).map(([id, label]) => (
-                          <option key={id} value={id}>{label}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* — Profissão & Emergência — */}
-                  <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px', marginTop: '4px' }}>
-                    <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>Profissão &amp; Contato de Emergência</p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                      <div className="form-group">
-                        <label className="input-label">Profissão</label>
-                        <input
-                          type="text"
-                          className="input-field"
-                          placeholder="Ex: Engenheiro, Professor..."
-                          value={newPatient.profissao || ''}
-                          onChange={e => setNewPatient({ ...newPatient, profissao: e.target.value })}
-                        />
-                      </div>
-                      <div className="grid-cols-2">
-                        <div className="form-group">
-                          <label className="input-label">Nome do Contato de Emergência</label>
-                          <input
-                            type="text"
-                            className="input-field"
-                            placeholder="Ex: Maria Silva"
-                            value={newPatient.nomeContatoEmergencia || ''}
-                            onChange={e => setNewPatient({ ...newPatient, nomeContatoEmergencia: e.target.value })}
-                          />
-                        </div>
-                        <div className="form-group">
-                          <label className="input-label">Telefone de Emergência</label>
-                          <input
-                            type="text"
-                            className="input-field"
-                            placeholder="(00) 00000-0000"
-                            maxLength={15}
-                            value={newPatient.telefoneContatoEmergencia || ''}
-                            onChange={e => setNewPatient({ ...newPatient, telefoneContatoEmergencia: applyPhoneMask(e.target.value) })}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* — Endereço — */}
-                  <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px', marginTop: '4px' }}>
-                    <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>Endereço Residencial</p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                      <div className="grid-cols-2">
-                        <div className="form-group">
-                          <label className="input-label">Logradouro</label>
-                          <input
-                            type="text"
-                            className="input-field"
-                            placeholder="Rua, Av., Travessa..."
-                            value={newPatient.endereco?.logradouro || ''}
-                            onChange={e => setNewPatient({ ...newPatient, endereco: { ...newPatient.endereco!, logradouro: e.target.value } })}
-                          />
-                        </div>
-                        <div className="form-group">
-                          <label className="input-label">Número</label>
-                          <input
-                            type="number"
-                            className="input-field"
-                            placeholder="Ex: 123"
-                            min={0}
-                            value={newPatient.endereco?.numero || ''}
-                            onChange={e => setNewPatient({ ...newPatient, endereco: { ...newPatient.endereco!, numero: Number(e.target.value) } })}
-                          />
-                        </div>
-                      </div>
-                      <div className="grid-cols-2">
-                        <div className="form-group">
-                          <label className="input-label">Complemento</label>
-                          <input
-                            type="text"
-                            className="input-field"
-                            placeholder="Apto, Bloco..."
-                            value={newPatient.endereco?.complemento || ''}
-                            onChange={e => setNewPatient({ ...newPatient, endereco: { ...newPatient.endereco!, complemento: e.target.value } })}
-                          />
-                        </div>
-                        <div className="form-group">
-                          <label className="input-label">Bairro</label>
-                          <input
-                            type="text"
-                            className="input-field"
-                            placeholder="Ex: Centro"
-                            value={newPatient.endereco?.bairro || ''}
-                            onChange={e => setNewPatient({ ...newPatient, endereco: { ...newPatient.endereco!, bairro: e.target.value } })}
-                          />
-                        </div>
-                      </div>
-                      <div className="grid-cols-2">
-                        <div className="form-group">
-                          <label className="input-label">Cidade</label>
-                          <input
-                            type="text"
-                            className="input-field"
-                            placeholder="Ex: São Paulo"
-                            value={newPatient.endereco?.cidade || ''}
-                            onChange={e => setNewPatient({ ...newPatient, endereco: { ...newPatient.endereco!, cidade: e.target.value } })}
-                          />
-                        </div>
-                        <div className="form-group">
-                          <label className="input-label">Estado (UF)</label>
-                          <input
-                            type="text"
-                            className="input-field"
-                            placeholder="Ex: SP"
-                            maxLength={2}
-                            value={newPatient.endereco?.estado || ''}
-                            onChange={e => setNewPatient({ ...newPatient, endereco: { ...newPatient.endereco!, estado: e.target.value.toUpperCase() } })}
-                          />
-                        </div>
-                      </div>
-                      <div className="form-group">
-                        <label className="input-label">CEP</label>
-                        <input
-                          type="text"
-                          className="input-field"
-                          placeholder="00000-000"
-                          maxLength={9}
-                          value={newPatient.endereco?.cep || ''}
-                          onChange={e => setNewPatient({ ...newPatient, endereco: { ...newPatient.endereco!, cep: applyCepMask(e.target.value) } })}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setIsCreating(false)}>
-                  Cancelar
-                </button>
-                <button type="submit" className="btn btn-primary" disabled={isSaving}>
-                  {isSaving ? 'Cadastrando...' : 'Cadastrar Paciente'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+      {isCreating && (
+        <NewPatientModal
+          onClose={() => setIsCreating(false)}
+          onCreated={async () => {
+            setIsCreating(false);
+            await fetchPatients();
+          }}
+        />
       )}
 
       {/* Modal de Edição */}
@@ -1210,12 +879,13 @@ export function Patients() {
                       </select>
                     </div>
                     <div className="form-group">
-                      <label className="input-label">Convênio <span style={{ color: '#ef4444' }}>*</span></label>
+                      <label className="input-label">Convênio</label>
                       <select
                         className="input-field"
-                        value={editingPatient.convenio}
-                        onChange={e => setEditingPatient({ ...editingPatient, convenio: parseInt(e.target.value) })}
+                        value={editingPatient.convenio ?? ''}
+                        onChange={e => setEditingPatient({ ...editingPatient, convenio: e.target.value ? parseInt(e.target.value) : null })}
                       >
+                        <option value="">Não informado</option>
                         {Object.entries(convenioMap).map(([id, label]) => (
                           <option key={id} value={id}>{label}</option>
                         ))}
