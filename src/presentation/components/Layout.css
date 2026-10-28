@@ -209,7 +209,8 @@
     z-index: 40;
   }
   .mobile-logo {
-    height: 40px;
+    height: 36px;
+    width: auto;
   }
   .mobile-menu-btn {
     display: flex;

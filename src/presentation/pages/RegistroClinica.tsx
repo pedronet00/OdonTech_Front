@@ -191,8 +191,8 @@ export function RegistroClinica() {
       <div className="registro-left">
         <div className="registro-left-content">
           <img
-            src="/odontech_logo_azul.svg"
-            alt="OdonTech Logo"
+            src="/odontech-logo-branco.svg"
+            alt="OdonTech"
           />
           <h2 className="registro-left-tagline">
             A gestão da sua clínica, <span>simplificada</span>.

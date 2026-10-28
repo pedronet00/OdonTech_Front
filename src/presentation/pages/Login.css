@@ -54,10 +54,10 @@
 }
 
 .login-left-content img {
-  height: 180px;
+  height: 72px;
   width: auto;
-  margin-bottom: 12px;
-  filter: brightness(0) invert(1);
+  max-width: 100%;
+  margin-bottom: 32px;
 }
 
 .login-left-tagline {
@@ -396,7 +396,8 @@
   }
 
   .login-left-content img {
-    height: 120px;
+    height: 52px;
+    margin-bottom: 24px;
   }
 
   .login-left-tagline {

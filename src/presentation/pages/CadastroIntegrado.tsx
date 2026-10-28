@@ -601,7 +601,7 @@ export function CadastroIntegrado() {
       {/* Header */}
       <div className="public-header">
         <div className="flex-row items-center gap-3">
-          <img src="/odontech_logo_horizontal_azul.svg" alt="OdonTech Logo" className="public-logo" />
+          <img src="/odontech-logo.svg" alt="OdonTech" className="public-logo" />
         </div>
         <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
           {metadata?.tipoCadastro === 'SomenteAnamnese' ? 'Ficha de Anamnese' : 'Paciente & Anamnese'}

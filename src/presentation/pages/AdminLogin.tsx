@@ -140,8 +140,8 @@ export function AdminLogin() {
       <div className="login-left">
         <div className="login-left-content">
           <img
-            src="/odontech_logo_azul.svg"
-            alt="OdonTech Logo"
+            src="/odontech-logo-branco.svg"
+            alt="OdonTech"
           />
           <h2 className="login-left-tagline">
             Área <span>administrativa</span>.

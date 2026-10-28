@@ -38,7 +38,7 @@ export function Layout() {
   return (
     <div className="layout-container animate-fade-in">
       <div className="mobile-header">
-        <img src="/odontech_logo_branco.svg" alt="OdonTech Logo" className="mobile-logo" />
+        <img src="/odontech-logo.svg" alt="OdonTech" className="mobile-logo" />
         <button className="mobile-menu-btn" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
           {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
@@ -49,12 +49,14 @@ export function Layout() {
       )}
 
       <aside className={`sidebar ${isMobileMenuOpen ? 'open' : ''} ${isSidebarCollapsed ? 'collapsed' : ''}`}>
-        <div className="sidebar-header" style={{ justifyContent: 'center', padding: '16px 20px 8px 20px' }}>
-          {!isSidebarCollapsed && (
+        <div className="sidebar-header" style={{ justifyContent: 'center', padding: '8px 20px 24px 20px' }}>
+          {isSidebarCollapsed ? (
+            <img src="/odontech-icone.svg" alt="OdonTech" style={{ height: '40px', width: '40px' }} />
+          ) : (
             <img
-              src="/odontech_logo_branco.svg"
-              alt="OdonTech Logo"
-              style={{ height: '150px', width: 'auto', maxWidth: '100%', objectFit: 'contain' }}
+              src="/odontech-logo-branco.svg"
+              alt="OdonTech"
+              style={{ height: '52px', width: 'auto', maxWidth: '100%', objectFit: 'contain' }}
             />
           )}
         </div>
