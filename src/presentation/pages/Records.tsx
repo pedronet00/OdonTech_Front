@@ -97,6 +97,14 @@ export function Records() {
     'Cancelado': 4
   };
 
+  const statusAtendimentoMap: { [key: string]: string } = {
+    'Pendente': 'Pendente',
+    'EmAndamento': 'Em andamento',
+    'Concluido': 'Concluído',
+    'Cancelado': 'Cancelado'
+  }
+
+
   const tipoMap: { [key: string]: number } = {
     'Consulta': 1,
     'Cirurgia': 2,
@@ -702,13 +710,32 @@ export function Records() {
                           <div className="flex-row items-center gap-2" style={{ marginBottom: '4px' }}>
                             <h3 style={{ fontSize: '1.25rem', fontWeight: 700 }}>{atendimento.tipoAtendimento}</h3>
                             <span className={`status-badge ${atendimento.statusAtendimento.toLowerCase().replace(/\s/g, '')}`}>
-                              {atendimento.statusAtendimento}
+                              {statusAtendimentoMap[atendimento.statusAtendimento] || atendimento.statusAtendimento}
                             </span>
                           </div>
                           <div className="flex-row items-center gap-4" style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                            <span className="flex-row items-center gap-1"><Calendar size={14} /> {new Date(atendimento.dataAtendimento).toLocaleDateString('pt-BR')}</span>
-                            <span className="flex-row items-center gap-1"><User size={14} /> {atendimento.nomeProfissional}</span>
-                          </div>
+                          {atendimento.dente && (
+                          <span
+                            className="flex-row items-center gap-1"
+                            style={{
+                              color: '#fff',                            // azul escuro (texto)
+                              backgroundColor: '#0369a1', // azul claro translúcido (fundo)
+                              border: '1px solid rgba(59, 130, 246, 0.35)',
+                              padding: '2px 10px',
+                              borderRadius: '999px',
+                              fontWeight: 600,
+                            }}
+                          >
+                            Dente {atendimento.dente}
+                          </span>
+                        )}
+                          <span className="flex-row items-center gap-1">
+                            <Calendar size={14} /> {new Date(atendimento.dataAtendimento).toLocaleDateString('pt-BR')}
+                          </span>
+                          <span className="flex-row items-center gap-1">
+                            <User size={14} /> {atendimento.nomeProfissional}
+                          </span>
+                        </div>
                           {(atendimento.nomeUsuarioCriacao || formatCriacaoDate(atendimento.dataCriacao)) && (
                             <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '4px', display: 'flex', flexDirection: 'row', flexWrap: 'wrap', columnGap: '16px', rowGap: '4px' }}>
                               {atendimento.nomeUsuarioCriacao && (
