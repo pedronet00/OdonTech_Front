@@ -714,7 +714,7 @@ export function Records() {
                             </span>
                           </div>
                           <div className="flex-row items-center gap-4" style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                          {atendimento.dente && (
+                          {atendimento.dente && atendimento.dente > 0 && (
                           <span
                             className="flex-row items-center gap-1"
                             style={{
