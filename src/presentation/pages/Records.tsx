@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FilePlus, Activity, ArrowLeft, Calendar, User, MoreVertical, Edit, Trash2, X, File, Download, Image, Upload, FileText, DollarSign, Check, CircleCheck, CircleX, PenLine, FileCheck } from 'lucide-react';
+import { FilePlus, Activity, ArrowLeft, Calendar, User, MoreVertical, Edit, Trash2, X, File, Download, Image, Upload, FileText, DollarSign, Check, CircleCheck, CircleX, PenLine, FileCheck, Box } from 'lucide-react';
 import { useAuth } from '../../application/contexts/AuthContext';
 import ApiClient from '../../infrastructure/api/apiClient';
 import { SignatureModal } from '../components/SignatureModal';
@@ -9,6 +9,9 @@ import { FormaPagamentoEnum, StatusPagamentoEnum } from '../../domain/models/typ
 import toast from 'react-hot-toast';
 import { confirmAction } from '../../utils/alerts';
 import './Records.css';
+
+// three.js é pesado: o visualizador só é baixado quando alguém abre um dente.
+const ToothViewerModal = lazy(() => import('../components/tooth/ToothViewerModal'));
 
 const formatCriacaoDate = (dateStr?: string | null) => {
   if (!dateStr || dateStr.startsWith('0001-01-01')) return null;
@@ -34,6 +37,7 @@ export function Records() {
   const [editingAtendimento, setEditingAtendimento] = useState<Atendimento | null>(null);
   // const [printingAtendimento, setPrintingAtendimento] = useState<Atendimento | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [viewingTooth, setViewingTooth] = useState<number | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [newAtendimento, setNewAtendimento] = useState({
     tipoAtendimento: 'Consulta',
@@ -714,20 +718,16 @@ export function Records() {
                             </span>
                           </div>
                           <div className="flex-row items-center gap-4" style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                          {atendimento.dente && atendimento.dente > 0 && (
-                          <span
-                            className="flex-row items-center gap-1"
-                            style={{
-                              color: '#fff',                            // azul escuro (texto)
-                              backgroundColor: '#0369a1', // azul claro translúcido (fundo)
-                              border: '1px solid rgba(59, 130, 246, 0.35)',
-                              padding: '2px 10px',
-                              borderRadius: '999px',
-                              fontWeight: 600,
-                            }}
+                          {atendimento.dente! > 0 && (
+                          <button
+                            type="button"
+                            className="tooth-chip"
+                            onClick={() => setViewingTooth(atendimento.dente!)}
+                            title="Ver o dente no modelo 3D"
+                            aria-label={`Ver o dente ${atendimento.dente} no modelo 3D`}
                           >
-                            Dente {atendimento.dente}
-                          </span>
+                            <Box size={13} aria-hidden="true" /> Dente {atendimento.dente}
+                          </button>
                         )}
                           <span className="flex-row items-center gap-1">
                             <Calendar size={14} /> {new Date(atendimento.dataAtendimento).toLocaleDateString('pt-BR')}
@@ -1135,6 +1135,19 @@ export function Records() {
             </div>
           )}
         </div>
+      )}
+
+      {/* Visualizador 3D do dente */}
+      {viewingTooth !== null && (
+        <Suspense
+          fallback={
+            <div className="modal-overlay">
+              <div className="glass-panel" style={{ padding: '24px 32px' }}>Carregando modelo 3D…</div>
+            </div>
+          }
+        >
+          <ToothViewerModal tooth={viewingTooth} onClose={() => setViewingTooth(null)} />
+        </Suspense>
       )}
 
       {/* Modal de Novo Atendimento */}
