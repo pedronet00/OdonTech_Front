@@ -586,7 +586,19 @@ export function Patients() {
     setCurrentPage(1);
   }, [searchTerm]);
 
-  const filteredPatients = patients.filter(p => p.nome.toLowerCase().includes(searchTerm.toLowerCase()));
+  const normalizeText = (text: string) =>
+    text
+      .normalize('NFD')                
+      .replace(/[\u0300-\u036f]/g, '')   
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+
+  const normalizedSearch = normalizeText(searchTerm);
+
+  const filteredPatients = patients.filter(p =>
+    normalizeText(p.nome).includes(normalizedSearch)
+  );  
   const totalPages = Math.ceil(filteredPatients.length / ITEMS_PER_PAGE);
   const paginatedPatients = filteredPatients.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
