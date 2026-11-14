@@ -11,6 +11,7 @@ import { Records } from './presentation/pages/Records';
 import { Finance } from './presentation/pages/Finance';
 import { Professionals } from './presentation/pages/Professionals';
 import { Settings } from './presentation/pages/Settings';
+import { Profile } from './presentation/pages/Profile';
 import { AuthProvider, useAuth } from './application/contexts/AuthContext';
 import { Toaster } from 'react-hot-toast';
 
@@ -49,6 +50,7 @@ function App() {
             <Route path="financeiro" element={<ProfissionalRoute><Finance /></ProfissionalRoute>} />
             <Route path="profissionais" element={<Professionals />} />
             <Route path="configuracoes" element={<Settings />} />
+            <Route path="perfil" element={<Profile />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

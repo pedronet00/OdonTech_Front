@@ -1,0 +1,11 @@
+<svg width="100" height="100" viewBox="110 15 100 100" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>Ícone Odontech</title>
+<desc>Só o ícone do logo Odontech (dente estilizado com nó tecnológico), em branco, recortado de odontech_logo_branco.svg.</desc>
+<g fill="#ffffff">
+<path d="M120,48 C120,33 130,23 150,23 C170,23 180,33 180,48 C180,63 175,73 172,83 C170,93 168,108 162,108 C158,108 156,93 154,83 C152,78 148,78 146,83 C144,93 142,108 138,108 C132,108 130,93 128,83 C125,73 120,63 120,48 Z"/>
+<circle cx="190" cy="36" r="4.5"/>
+<line x1="181" y1="42" x2="186" y2="38" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+<circle cx="202" cy="50" r="3" opacity="0.55"/>
+<line x1="194" y1="40" x2="199" y2="47" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" opacity="0.55"/>
+</g>
+</svg>

@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   Users,
   // CalendarDays,
@@ -10,7 +10,8 @@ import {
   Settings as SettingsIcon,
   ChevronsLeft,
   ChevronsRight,
-  CalendarDays
+  CalendarDays,
+  UserRound
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '../../application/contexts/AuthContext';
@@ -38,7 +39,7 @@ export function Layout() {
   return (
     <div className="layout-container animate-fade-in">
       <div className="mobile-header">
-        <img src="/odontech-logo.svg" alt="OdonTech" className="mobile-logo" />
+        <img src="/odontech_logo_horizontal_azul.svg" alt="OdonTech" className="mobile-logo" />
         <button className="mobile-menu-btn" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
           {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
@@ -49,14 +50,14 @@ export function Layout() {
       )}
 
       <aside className={`sidebar ${isMobileMenuOpen ? 'open' : ''} ${isSidebarCollapsed ? 'collapsed' : ''}`}>
-        <div className="sidebar-header" style={{ justifyContent: 'center', padding: '8px 20px 24px 20px' }}>
+        <div className="sidebar-header" style={{ justifyContent: 'center', padding: '8px 20px 16px 20px' }}>
           {isSidebarCollapsed ? (
-            <img src="/odontech-icone.svg" alt="OdonTech" style={{ height: '40px', width: '40px' }} />
+            <img src="/odontech_icone_branco.svg" alt="OdonTech" style={{ height: '40px', width: '40px' }} />
           ) : (
             <img
-              src="/odontech-logo-branco.svg"
+              src="/odontech_logo_branco.svg"
               alt="OdonTech"
-              style={{ height: '52px', width: 'auto', maxWidth: '100%', objectFit: 'contain' }}
+              style={{ height: '120px', width: 'auto', maxWidth: '100%', objectFit: 'contain' }}
             />
           )}
         </div>
@@ -114,6 +115,16 @@ export function Layout() {
             <SettingsIcon className="nav-icon" />
             {!isSidebarCollapsed && <span>Configurações</span>}
           </NavLink>
+
+          <NavLink
+            to="/perfil"
+            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            onClick={() => setIsMobileMenuOpen(false)}
+            title="Meu perfil"
+          >
+            <UserRound className="nav-icon" />
+            {!isSidebarCollapsed && <span>Meu perfil</span>}
+          </NavLink>
           <button
             className="nav-item w-full"
             onClick={handleLogout}
@@ -132,7 +143,13 @@ export function Layout() {
 
         <div style={{ padding: '0 12px', marginTop: 'auto', marginBottom: '16px' }}>
           {!isSidebarCollapsed && (
-            <div className="user-profile" style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '16px' }}>
+            <Link
+              to="/perfil"
+              className="user-profile user-profile-link"
+              onClick={() => setIsMobileMenuOpen(false)}
+              title="Meu perfil"
+              style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '16px' }}
+            >
               <div className="user-avatar">{user?.nome?.substring(0, 1).toUpperCase() || 'US'}</div>
               <div className="user-info">
                 <span className="user-name">{user?.nome || 'Usuário'}</span>
@@ -140,11 +157,13 @@ export function Layout() {
                   {isSecretaria ? `Secretária · ${user?.clinica_nome ?? ''}` : user?.clinica_nome || 'Admin'}
                 </span>
               </div>
-            </div>
+            </Link>
           )}
           {isSidebarCollapsed && (
             <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <div className="user-avatar">{user?.nome?.substring(0, 1).toUpperCase() || 'US'}</div>
+              <Link to="/perfil" className="user-avatar" title="Meu perfil" aria-label="Meu perfil">
+                {user?.nome?.substring(0, 1).toUpperCase() || 'US'}
+              </Link>
             </div>
           )}
         </div>

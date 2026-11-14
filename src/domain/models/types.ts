@@ -349,6 +349,35 @@ export interface Profissional {
   clinicaId: string;
 }
 
+/** Usuário logado, como devolvido por GET /perfil. */
+export interface Perfil {
+  id: string;
+  nome: string;
+  email: string;
+  /** Já formatado: "(11) 99999-9999". */
+  telefone: string | null;
+  perfil: 'profissional' | 'secretaria' | 'superadmin' | '';
+  roles: string[];
+  /** Só profissional. */
+  cro: string | null;
+  clinicaId: string | null;
+  clinicaNome: string | null;
+}
+
+export interface AtualizarPerfilRequest {
+  nome: string;
+  email: string;
+  /** Vazio ou null apaga o telefone. */
+  telefone?: string | null;
+  /** Só enviar para profissional; vazio é ignorado pelo backend. */
+  cro?: string | null;
+}
+
+export interface AlterarSenhaRequest {
+  senhaAtual: string;
+  novaSenha: string;
+}
+
 export interface Secretaria {
   id: string;
   nome: string;

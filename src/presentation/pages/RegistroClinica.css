@@ -54,10 +54,10 @@
 }
 
 .registro-left-content img {
-  height: 72px;
+  height: 170px;
   width: auto;
   max-width: 100%;
-  margin-bottom: 32px;
+  margin-bottom: 12px;
 }
 
 .registro-left-tagline {
@@ -643,8 +643,8 @@
   }
 
   .registro-left-content img {
-    height: 52px;
-    margin-bottom: 24px;
+    height: 120px;
+    margin-bottom: 8px;
   }
 
   .registro-left-tagline {

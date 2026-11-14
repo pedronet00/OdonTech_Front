@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import { API_BASE_URL } from '../../infrastructure/config/api';
+import ApiClient from '../../infrastructure/api/apiClient';
 
 export interface User {
   sub: string;
@@ -30,6 +31,10 @@ interface AuthContextType {
   token: string | null;
   login: (data: LoginResponse) => void;
   logout: () => void;
+  /** Atualiza na hora os dados exibidos do usuário (ex.: depois de editar o perfil), antes do novo token chegar. */
+  updateUser: (patch: Partial<Pick<User, 'nome' | 'email' | 'cro'>>) => void;
+  /** Pede um novo access token (com os claims atuais) usando o refresh token. Devolve false se falhar. */
+  refreshSession: () => Promise<boolean>;
   isAuthenticated: boolean;
   /** Secretária: acesso restrito a agenda, pacientes, pagamentos e termos. */
   isSecretaria: boolean;
@@ -74,6 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const newToken = localStorage.getItem('@OdonTech:token');
       if (newToken) {
         setToken(newToken);
+        setRefreshToken(localStorage.getItem('@OdonTech:refreshToken'));
         try {
           const decoded = jwtDecode<User>(newToken);
           setUser(decoded);
@@ -139,6 +145,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateUser = (patch: Partial<Pick<User, 'nome' | 'email' | 'cro'>>) => {
+    setUser(current => (current ? { ...current, ...patch } : current));
+  };
+
+  // Reaproveita o refresh do ApiClient: ele salva os tokens e dispara `tokenUpdated`,
+  // que o listener acima usa para decodificar o novo token.
+  const refreshSession = async () => !!(await ApiClient.refreshAccessToken());
+
   const logout = () => {
     localStorage.removeItem('@OdonTech:token');
     localStorage.removeItem('@OdonTech:refreshToken');
@@ -155,6 +169,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       token,
       login,
       logout,
+      updateUser,
+      refreshSession,
       isAuthenticated: !!user,
       isSecretaria: user?.perfil?.toLowerCase() === 'secretaria',
       loading

@@ -1,20 +1,44 @@
 import { API_BASE_URL } from '../config/api';
 
+export interface ApiErrorItem {
+  code: string;
+  message: string;
+  /** Campo do formulário a que o erro se refere (ex.: "Email"), ou null para erros gerais. */
+  target: string | null;
+}
+
 export interface ApiResponse<T> {
   isSuccess: boolean;
   isFailure: boolean;
   data: T;
-  errors: {
-    code: string;
-    message: string;
-    target: string | null;
-  }[];
+  errors: ApiErrorItem[];
+}
+
+/**
+ * Erro devolvido pela API no envelope padrão. `message` é a primeira mensagem (como antes);
+ * `errors` traz a lista completa, com o `target` de cada uma.
+ */
+export class ApiError extends Error {
+  readonly errors: ApiErrorItem[];
+  readonly status: number;
+
+  constructor(message: string, errors: ApiErrorItem[], status: number) {
+    super(message);
+    this.name = 'ApiError';
+    this.errors = errors;
+    this.status = status;
+  }
 }
 
 class ApiClient {
   private static refreshPromise: Promise<string | null> | null = null;
 
-  private static async refreshAccessToken(): Promise<string | null> {
+  /**
+   * Troca o refresh token por um novo access token, salva os tokens como o login faz e
+   * dispara o evento `tokenUpdated` (o AuthContext escuta e atualiza o usuário).
+   * Devolve o novo access token, ou null se o refresh falhar.
+   */
+  public static async refreshAccessToken(): Promise<string | null> {
     if (this.refreshPromise) return this.refreshPromise;
 
     this.refreshPromise = (async () => {
@@ -72,11 +96,12 @@ class ApiClient {
       return result.data;
     }
 
-    const errorMessage = result.errors && result.errors.length > 0
-      ? result.errors[0].message
+    const errors = Array.isArray(result.errors) ? result.errors : [];
+    const errorMessage = errors.length > 0
+      ? errors[0].message
       : 'Ocorreu um erro inesperado no processamento da requisição.';
-      
-    throw new Error(errorMessage);
+
+    throw new ApiError(errorMessage, errors, response.status);
   }
 
   public static async request(endpoint: string, options: RequestInit = {}): Promise<Response> {

@@ -191,7 +191,7 @@ export function RegistroClinica() {
       <div className="registro-left">
         <div className="registro-left-content">
           <img
-            src="/odontech-logo-branco.svg"
+            src="/odontech_logo_branco.svg"
             alt="OdonTech"
           />
           <h2 className="registro-left-tagline">

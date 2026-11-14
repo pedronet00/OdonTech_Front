@@ -118,6 +118,24 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.user-profile-link {
+  text-decoration: none;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.user-profile-link:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.user-profile-link:focus-visible,
+a.user-avatar:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+}
+
+a.user-avatar { text-decoration: none; }
+
 .user-avatar {
   width: 40px;
   height: 40px;
@@ -209,7 +227,7 @@
     z-index: 40;
   }
   .mobile-logo {
-    height: 36px;
+    height: 44px;
     width: auto;
   }
   .mobile-menu-btn {
